@@ -59,7 +59,7 @@ export default function Hero({ data }: HeroProps) {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-pink-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
 
-      <div className="container mx-auto px-6 lg:px-8 relative z-10 lg:ml-20 xl:ml-64">
+      <div className="container mx-auto px-6 lg:px-8 relative z-10 pt-16">
         <div className="flex flex-col lg:flex-row items-center justify-between">
           {/* Text Content */}
           <div className="lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0">

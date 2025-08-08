@@ -74,7 +74,7 @@ export default function Skills({ technologies = [] }: SkillsProps) {
 
   return (
     <section id="skills" className="py-20 bg-gray-900 relative">
-      <div className="container mx-auto px-6 lg:px-8 lg:ml-20 xl:ml-64">
+      <div className="container mx-auto px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16">

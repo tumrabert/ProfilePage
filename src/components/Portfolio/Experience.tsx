@@ -166,9 +166,11 @@ export default function Experience({ experiences = [] }: ExperienceProps) {
             </div>
           ) : (
             <div className="relative">
-              {/* Timeline */}
+              {/* Timeline - Only show if there are experiences */}
               <div className="relative">
-                <div className="absolute left-4 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-0.5 bg-blue-500"></div>
+                {experiences.length > 0 && (
+                  <div className="absolute left-4 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-0.5 bg-blue-500"></div>
+                )}
                 
                 <div className="space-y-12">
                   {experiences.length > 0 ? experiences.map((exp, index) => (

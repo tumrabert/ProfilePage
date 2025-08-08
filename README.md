@@ -54,23 +54,41 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 
 ## 🚀 Quick Start
 
-### 🐳 **Recommended: Docker Setup (Easiest)**
+### 🐳 **Option A: Docker Development (Recommended - with Hot Reload!)**
 
 ```bash
 # Clone the repository
 git clone https://github.com/tumrabert/ProfilePage.git
 cd ProfilePage
 
-# Start everything with Docker (includes MongoDB with sample data)
+# Option 1: Quick start with script
+./start-dev.sh
+
+# Option 2: Manual start
+npm run dev:docker
+
+# Option 3: Direct Docker command
+docker-compose -f docker-compose.dev.yml up --build -d
+```
+
+**✨ Features:**
+- 🔥 **Hot reloading** - Code changes appear instantly!
+- 🐳 **Full Docker setup** with MongoDB
+- 🎯 **Development optimized** with turbo mode
+
+**🎉 That's it!** Visit [http://localhost:3000](http://localhost:3000)
+
+**Default Admin Credentials:** `admin` / `admin123`
+
+### 🏗️ **Option B: Docker Production (No Hot Reload)**
+
+```bash
+# Production mode (builds and runs optimized version)
 docker-compose up -d
 
 # View logs
 docker-compose logs -f portfolio-app
 ```
-
-**🎉 That's it!** Visit [http://localhost:3000](http://localhost:3000)
-
-**Default Admin Credentials:** `admin` / `admin123`
 
 ### 💻 **Development Setup (Local)**
 
@@ -568,11 +586,17 @@ npm run test:coverage
 
 ### 🔧 **Available Scripts**
 ```bash
+# Local Development
 npm run dev          # Development server
 npm run build        # Production build
 npm run start        # Production server
 npm run lint         # ESLint checking
-npm run type-check   # TypeScript validation
+
+# Docker Development (with Hot Reload)
+npm run dev:docker   # Start development containers
+npm run dev:logs     # View container logs
+npm run dev:docker:down # Stop development containers
+./start-dev.sh       # Quick start script with status info
 ```
 
 ## 🌟 **Migration Success Story**

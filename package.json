@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "dev:docker": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:docker:down": "docker-compose -f docker-compose.dev.yml down",
+    "dev:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "dev:start": "./start-dev.sh"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.84.1",

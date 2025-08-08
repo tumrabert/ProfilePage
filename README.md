@@ -58,8 +58,8 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd portfolio-nextjs
+git clone https://github.com/tumrabert/ProfilePage.git
+cd ProfilePage
 
 # Start everything with Docker (includes MongoDB with sample data)
 docker-compose up -d

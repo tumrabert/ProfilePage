@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: portfolio-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: portfolio123
+      MONGO_INITDB_DATABASE: portfolio
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - portfolio-network
+
+  # Next.js Application
+  portfolio-app:
+    build: .
+    container_name: portfolio-nextjs
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://root:portfolio123@mongodb:27017/portfolio?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-please
+      - JWT_EXPIRES_IN=1h
+      - DEFAULT_ADMIN_USERNAME=admin
+      - DEFAULT_ADMIN_PASSWORD=admin123
+      - DEFAULT_ADMIN_EMAIL=admin@portfolio.com
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - GITHUB_TOKEN=your-github-token-here
+      - GITHUB_USERNAME=your-github-username
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - portfolio-network
+    volumes:
+      - ./.env.local:/app/.env.local:ro
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

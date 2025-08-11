@@ -2,9 +2,9 @@ pipeline {
     agent any
     
     triggers {
-        // Poll GitHub for changes every 2 minutes
-        pollSCM('H/2 * * * *')
-        // Alternatively, use webhook trigger
+        // Poll GitHub for changes every minute (for testing)
+        pollSCM('* * * * *')
+        // Webhook trigger
         githubPush()
     }
     

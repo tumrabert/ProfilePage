@@ -134,7 +134,6 @@ pipeline {
                         echo "❌ Docker Compose file ${COMPOSE_FILE} not found!"
                         exit 1
                     fi
-                    fi
                 '''
             }
         }

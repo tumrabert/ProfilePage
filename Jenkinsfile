@@ -33,6 +33,9 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token')
         GITHUB_USERNAME = 'tumrabert'
         
+        // Website thumbnail generation API
+        THUMBNAIL_API = credentials('thumbnail-api-key')
+        
         // Jenkins user for local operations
         JENKINS_USER = 'jenkins'
     }

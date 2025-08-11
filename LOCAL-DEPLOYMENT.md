@@ -211,6 +211,12 @@ Add these credentials (click "Add Credentials" for each):
 3. Select scopes: `repo`, `admin:repo_hook`
 4. Copy the token and paste in Jenkins
 
+### 5.6 Thumbnail API Key
+- **Kind:** Secret text
+- **Secret:** Your thumbnail.ws API key (get from https://thumbnail.ws/)
+- **ID:** `thumbnail-api-key`
+- **Description:** Website Screenshot Generation API
+
 ---
 
 ## 📦 **Step 6: Create Jenkins Pipeline Job**
@@ -226,7 +232,7 @@ Add these credentials (click "Add Credentials" for each):
 #### **General Tab:**
 - **Description:** `Portfolio Next.js Production Deployment to www.tumrabert.com`
 - **Check:** "GitHub project"
-- **Project url:** `https://github.com/your-username/your-repository/`
+- **Project url:** `https://github.com/tumrabert/ProfilePage/`
 
 #### **Build Triggers:**
 - **Check:** "GitHub hook trigger for GITScm polling"
@@ -234,9 +240,9 @@ Add these credentials (click "Add Credentials" for each):
 #### **Pipeline Section:**
 - **Definition:** "Pipeline script from SCM"
 - **SCM:** "Git"
-- **Repository URL:** `https://github.com/your-username/your-repository.git`
+- **Repository URL:** `https://github.com/tumrabert/ProfilePage.git`
 - **Branch Specifier:** `*/main` (for production) or `*/*` (for all branches)
-- **Script Path:** `portfolio-nextjs/Jenkinsfile`
+- **Script Path:** `Jenkinsfile`
 
 **Click "Save"**
 
@@ -261,8 +267,8 @@ curl -X POST http://tumrabert.com/github-webhook/ \
   -d '{
     "ref": "refs/heads/main",
     "repository": {
-      "name": "your-repo",
-      "clone_url": "https://github.com/your-username/your-repo.git"
+      "name": "ProfilePage",
+      "clone_url": "https://github.com/tumrabert/ProfilePage.git"
     }
   }'
 ```

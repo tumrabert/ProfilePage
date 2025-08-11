@@ -329,6 +329,47 @@ EOF
             }
         }
         
+        stage('Initialize Admin User') {
+            // Remove when condition to run on any branch for now
+            steps {
+                echo '👤 Initializing default admin user...'
+                script {
+                    try {
+                        sh '''
+                            # Wait a moment for application to be fully ready
+                            sleep 5
+                            
+                            # Check if admin user needs to be created
+                            echo "🔍 Checking admin user status..."
+                            ADMIN_STATUS=$(curl -s ${HEALTH_CHECK_URL}/api/admin/initialize | grep -o '"needsInitialization":[^,}]*' | cut -d: -f2)
+                            
+                            if [ "$ADMIN_STATUS" = "true" ]; then
+                                echo "🔧 Creating default admin user..."
+                                ADMIN_RESULT=$(curl -X POST -s ${HEALTH_CHECK_URL}/api/admin/initialize)
+                                
+                                if echo "$ADMIN_RESULT" | grep -q "Admin user created successfully"; then
+                                    echo "✅ Default admin user created successfully"
+                                    echo "Username: admin"
+                                    echo "Password: Using DEFAULT_ADMIN_PASSWORD from credentials"
+                                else
+                                    echo "⚠️  Admin user creation response: $ADMIN_RESULT"
+                                fi
+                            else
+                                echo "✅ Admin user already exists - no initialization needed"
+                            fi
+                            
+                            # Final verification
+                            echo "📊 Final admin status:"
+                            curl -s ${HEALTH_CHECK_URL}/api/admin/initialize | grep -o '"adminUsers":[^,}]*\\|"totalUsers":[^,}]*' || echo "Status check failed"
+                        '''
+                    } catch (Exception e) {
+                        echo "⚠️  Admin user initialization failed: ${e.getMessage()}"
+                        echo "Admin user can be created manually using: curl -X POST ${HEALTH_CHECK_URL}/api/admin/initialize"
+                    }
+                }
+            }
+        }
+        
         stage('Post-Deployment Tests') {
             // Remove when condition to run on any branch for now
             steps {

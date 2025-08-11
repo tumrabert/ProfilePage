@@ -20,7 +20,7 @@ export default function ImageUploader({
   placeholder = 'Upload or paste image URL',
   className = '',
   accept = 'image/*',
-  maxSizeText = 'Max 5MB',
+  maxSizeText = 'Max 10MB (auto-compressed)',
   showUrlToggle = true,
   showPreview = true
 }: ImageUploaderProps) {
@@ -33,7 +33,65 @@ export default function ImageUploader({
   const [isFetchingFromWebsite, setIsFetchingFromWebsite] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (file: File) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new window.Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1200px width/height while maintaining aspect ratio)
+        const maxDimension = 1200;
+        let { width, height } = img;
+        
+        if (width > height && width > maxDimension) {
+          height = (height * maxDimension) / width;
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = (width * maxDimension) / height;
+          height = maxDimension;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Start with high quality and reduce if needed
+          let quality = 0.8;
+          let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          
+          // If still too large, reduce quality further
+          while (compressedDataUrl.length > 500000 && quality > 0.1) { // ~500KB limit
+            quality -= 0.1;
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          console.log('Original size:', file.size, 'bytes');
+          console.log('Compressed size:', compressedDataUrl.length, 'characters');
+          console.log('Compression quality used:', quality);
+          
+          resolve(compressedDataUrl);
+        } else {
+          reject(new Error('Could not get canvas context'));
+        }
+      };
+      
+      img.onerror = () => reject(new Error('Could not load image'));
+      
+      // Read file as data URL to load into image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (file: File) => {
     setError('');
     setIsLoading(true);
 
@@ -44,30 +102,27 @@ export default function ImageUploader({
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
+    // Validate file size (10MB for raw upload, we'll compress it)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
       setIsLoading(false);
       return;
     }
 
     console.log('Processing file upload:', file.name, file.type, `${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
-    // Create file reader to convert to base64 or data URL
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      console.log('File read successfully, data URL length:', result.length);
-      setImageUrl(result);
-      onImageChange(result);
+    try {
+      // Compress the image before uploading
+      const compressedDataUrl = await compressImage(file);
+      console.log('Image compressed successfully');
+      setImageUrl(compressedDataUrl);
+      onImageChange(compressedDataUrl);
+    } catch (error) {
+      console.error('Image compression error:', error);
+      setError('Failed to process image - please try a different image');
+    } finally {
       setIsLoading(false);
-    };
-    reader.onerror = (error) => {
-      console.error('File reader error:', error);
-      setError('Failed to read file - please try a different image');
-      setIsLoading(false);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleUrlChange = (url: string) => {

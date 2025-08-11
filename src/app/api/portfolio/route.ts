@@ -3,6 +3,10 @@ import dbConnect from '@/lib/mongodb';
 import Portfolio from '@/models/Portfolio';
 import { verifyToken, extractTokenFromRequest } from '@/lib/auth';
 
+// Increase body size limit for image uploads
+export const runtime = 'nodejs';
+export const maxDuration = 30; // 30 seconds timeout
+
 // GET - Fetch portfolio data
 export async function GET() {
   try {

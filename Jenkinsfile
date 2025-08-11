@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    tools {
+        nodejs 'NodeJS-18'  // This requires NodeJS plugin installed
+    }
+    
     environment {
         // Production configuration
         NODE_ENV = 'production'
@@ -44,34 +48,18 @@ pipeline {
             }
         }
         
-        stage('Setup Node.js') {
+        stage('Setup Environment') {
             steps {
-                echo '🔧 Setting up Node.js environment...'
+                echo '🔧 Setting up environment...'
                 sh '''
-                    # Check if Node.js is available
-                    if ! command -v node &> /dev/null; then
-                        echo "❌ Node.js not found. Please install Node.js on Jenkins server."
-                        echo "Run: apt-get update && apt-get install -y nodejs npm"
-                        exit 1
-                    fi
-                    
-                    # Check if npm is available
-                    if ! command -v npm &> /dev/null; then
-                        echo "❌ npm not found. Please install npm on Jenkins server."
-                        exit 1
-                    fi
-                    
-                    # Install PM2 locally if not available globally
-                    if ! command -v pm2 &> /dev/null; then
-                        echo "Installing PM2 locally..."
-                        npm install pm2
-                        export PATH="$PWD/node_modules/.bin:$PATH"
-                    fi
-                    
-                    echo "✅ Environment check complete:"
+                    echo "✅ Environment check:"
                     node --version
                     npm --version
-                    pm2 --version || echo "PM2 will be available after npm install"
+                    
+                    # Install PM2 locally for deployment
+                    npm install pm2
+                    export PATH="$PWD/node_modules/.bin:$PATH"
+                    echo "PM2 installed locally"
                 '''
             }
         }

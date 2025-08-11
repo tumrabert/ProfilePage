@@ -8,6 +8,7 @@ import TechnologySelector from '@/components/UI/TechnologySelector';
 import ImageUploader from '@/components/UI/ImageUploader';
 import DragDropList from '@/components/UI/DragDropList';
 import { Technology } from '@/types/technology';
+import { formatTextWithLineBreaks } from '@/utils/textFormatting';
 
 // Utility function to ensure URL has proper protocol
 const ensureUrlProtocol = (url: string | undefined): string => {
@@ -497,9 +498,9 @@ export default function Projects({ projects = [] }: ProjectsProps) {
                           {project.name}
                         </h3>
                         
-                        <p className="text-gray-300 mb-4 line-clamp-3">
-                          {project.description}
-                        </p>
+                        <div className="text-gray-300 mb-4 line-clamp-3">
+                          {formatTextWithLineBreaks(project.description)}
+                        </div>
 
                         {/* Technologies */}
                         {project.technologies && project.technologies.length > 0 && (

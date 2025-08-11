@@ -5,6 +5,7 @@ import { useUpdatePortfolio, IWorkExperience } from '@/hooks/usePortfolio';
 import { useState } from 'react';
 import { MonthYearRangePicker } from '@/components/UI/YearPicker';
 import DragDropList, { DragDropTextList } from '@/components/UI/DragDropList';
+import { formatTextWithLineBreaks } from '@/utils/textFormatting';
 
 interface ExperienceProps {
   experiences?: IWorkExperience[];
@@ -234,7 +235,9 @@ export default function Experience({ experiences = [] }: ExperienceProps) {
                                 {exp.details.map((detail, detailIndex) => (
                                   <li key={detailIndex} className="text-gray-300 text-sm flex items-start">
                                     <i className="fas fa-chevron-right text-blue-400 mr-2 mt-1 text-xs"></i>
-                                    {detail}
+                                    <div>
+                                      {formatTextWithLineBreaks(detail)}
+                                    </div>
                                   </li>
                                 ))}
                               </ul>

@@ -37,7 +37,7 @@ export default function SettingsSidebar({
   );
 
   const [activeSection, setActiveSection] = useState<
-    "contact" | "social" | "personal"
+    "contact" | "social"
   >("contact");
 
   if (!isAuthenticated || !isOpen) return null;
@@ -78,7 +78,6 @@ export default function SettingsSidebar({
   const sections = [
     { id: "contact", label: "Contact Info", icon: "fa-address-card" },
     { id: "social", label: "Social Media", icon: "fa-share-alt" },
-    { id: "personal", label: "Personal Info", icon: "fa-user" },
   ];
 
   return (
@@ -111,7 +110,7 @@ export default function SettingsSidebar({
             {sections.map((section) => (
               <button
                 key={section.id}
-                onClick={() => setActiveSection(section.id as "contact" | "social" | "personal")}
+                onClick={() => setActiveSection(section.id as "contact" | "social")}
                 className={`flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
                   activeSection === section.id
                     ? "bg-blue-600 text-white"
@@ -262,78 +261,6 @@ export default function SettingsSidebar({
             </div>
           )}
 
-          {activeSection === "personal" && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Personal Information
-              </h3>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Nickname/Display Name
-                </label>
-                <input
-                  type="text"
-                  value={editData.nickname || ""}
-                  onChange={(e) => updateField("nickname", e.target.value)}
-                  placeholder="Optional nickname"
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Professional Title
-                </label>
-                <input
-                  type="text"
-                  value={editData.title || ""}
-                  onChange={(e) => updateField("title", e.target.value)}
-                  placeholder="e.g., Full Stack Developer"
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Short Description
-                </label>
-                <textarea
-                  value={editData.description || ""}
-                  onChange={(e) => updateField("description", e.target.value)}
-                  placeholder="Brief description about yourself"
-                  rows={4}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Avatar Image URL
-                </label>
-                <input
-                  type="url"
-                  value={editData.avatar || ""}
-                  onChange={(e) => updateField("avatar", e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400"
-                />
-                {editData.avatar && (
-                  <div className="mt-3">
-                    <p className="text-xs text-gray-400 mb-2">Preview:</p>
-                    <img
-                      src={editData.avatar}
-                      alt="Avatar preview"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

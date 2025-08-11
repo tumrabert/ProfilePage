@@ -362,11 +362,16 @@ export default function Skills({ technologies = [] }: SkillsProps) {
                         </div>
                       </div>
 
-                      {/* Technologies - Featured Projects Style */}
-                      <div className="flex flex-wrap gap-2">
+                      {/* Technologies - With Logos */}
+                      <div className="flex flex-wrap gap-3">
                         {techs.map((tech, index) => (
-                          <div key={index} className="bg-blue-600/20 text-blue-300 px-2 py-1 rounded text-xs font-medium">
-                            {tech.name}
+                          <div key={index} className="bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 px-3 py-2 rounded-lg border border-gray-600 hover:border-blue-500/50 flex items-center space-x-2">
+                            <TechLogo 
+                              technology={{ name: tech.name, icon: tech.name, isCustom: false }}
+                              size="sm"
+                              showName={false}
+                            />
+                            <span className="text-white text-sm font-medium">{tech.name}</span>
                           </div>
                         ))}
                       </div>

@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePortfolio, IPortfolio } from '@/hooks/usePortfolio';
 import { useState } from 'react';
+import { formatTextWithLineBreaks } from '@/utils/textFormatting';
 
 interface AboutProps {
   data?: IPortfolio;
@@ -226,9 +227,9 @@ export default function About({ data }: AboutProps) {
                 </div>
               ) : (
                 <div className="prose prose-invert prose-lg max-w-none">
-                  <p className="text-gray-300 leading-relaxed text-lg">
-                    {data.summary || 'Professional summary goes here...'}
-                  </p>
+                  <div className="text-gray-300 leading-relaxed text-lg">
+                    {formatTextWithLineBreaks(data.summary || 'Professional summary goes here...')}
+                  </div>
                 </div>
               )}
 

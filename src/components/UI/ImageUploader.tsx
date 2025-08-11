@@ -51,16 +51,20 @@ export default function ImageUploader({
       return;
     }
 
+    console.log('Processing file upload:', file.name, file.type, `${(file.size / 1024 / 1024).toFixed(2)}MB`);
+
     // Create file reader to convert to base64 or data URL
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
+      console.log('File read successfully, data URL length:', result.length);
       setImageUrl(result);
       onImageChange(result);
       setIsLoading(false);
     };
-    reader.onerror = () => {
-      setError('Failed to read file');
+    reader.onerror = (error) => {
+      console.error('File reader error:', error);
+      setError('Failed to read file - please try a different image');
       setIsLoading(false);
     };
     reader.readAsDataURL(file);

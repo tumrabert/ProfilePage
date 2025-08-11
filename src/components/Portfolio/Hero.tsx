@@ -5,6 +5,7 @@ import { useUpdatePortfolio, IIntro } from '@/hooks/usePortfolio';
 import { useState } from 'react';
 import Image from 'next/image';
 import AvatarUploader from '@/components/UI/AvatarUploader';
+import { formatTextWithLineBreaks } from '@/utils/textFormatting';
 
 // Utility function to ensure URL has proper protocol
 const ensureUrlProtocol = (url: string | undefined): string => {
@@ -139,9 +140,9 @@ export default function Hero({ data }: HeroProps) {
                 <p className="text-xl lg:text-2xl text-blue-300 mb-6 animate-fade-in-delay-1">
                   {data.title || 'Software Developer'}
                 </p>
-                <p className="text-lg text-gray-300 mb-8 max-w-2xl animate-fade-in-delay-2">
-                  {data.description || 'Welcome to my portfolio'}
-                </p>
+                <div className="text-lg text-gray-300 mb-8 max-w-2xl animate-fade-in-delay-2">
+                  {formatTextWithLineBreaks(data.description || 'Welcome to my portfolio')}
+                </div>
                 
                 {/* Contact Links */}
                 <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-8 animate-fade-in-delay-3">

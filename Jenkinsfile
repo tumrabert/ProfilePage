@@ -48,20 +48,30 @@ pipeline {
             steps {
                 echo '🔧 Setting up Node.js environment...'
                 sh '''
-                    # Install Node.js if not available
+                    # Check if Node.js is available
                     if ! command -v node &> /dev/null; then
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                        sudo apt-get install -y nodejs
+                        echo "❌ Node.js not found. Please install Node.js on Jenkins server."
+                        echo "Run: apt-get update && apt-get install -y nodejs npm"
+                        exit 1
                     fi
                     
-                    # Install PM2 globally if not available
+                    # Check if npm is available
+                    if ! command -v npm &> /dev/null; then
+                        echo "❌ npm not found. Please install npm on Jenkins server."
+                        exit 1
+                    fi
+                    
+                    # Install PM2 locally if not available globally
                     if ! command -v pm2 &> /dev/null; then
-                        sudo npm install -g pm2
+                        echo "Installing PM2 locally..."
+                        npm install pm2
+                        export PATH="$PWD/node_modules/.bin:$PATH"
                     fi
                     
+                    echo "✅ Environment check complete:"
                     node --version
                     npm --version
-                    pm2 --version || echo "PM2 installation pending..."
+                    pm2 --version || echo "PM2 will be available after npm install"
                 '''
             }
         }
@@ -94,19 +104,23 @@ pipeline {
             steps {
                 echo '🚀 Deploying to production...'
                 sh '''
+                    # Add node_modules/.bin to PATH for PM2
+                    export PATH="$PWD/node_modules/.bin:$PATH"
+                    
                     # Stop existing process
                     pm2 stop portfolio || true
                     
-                    # Create deployment directory
-                    sudo mkdir -p ${DEPLOY_DIR}
+                    # Create deployment directory (without sudo)
+                    mkdir -p ${DEPLOY_DIR}
                     
-                    # Copy files
-                    sudo rsync -av --delete .next/ ${DEPLOY_DIR}/.next/
-                    sudo rsync -av --delete public/ ${DEPLOY_DIR}/public/
-                    sudo cp package.json ${DEPLOY_DIR}/
+                    # Copy files (without sudo)
+                    rsync -av --delete .next/ ${DEPLOY_DIR}/.next/
+                    rsync -av --delete public/ ${DEPLOY_DIR}/public/
+                    cp package.json ${DEPLOY_DIR}/
+                    cp -r node_modules/ ${DEPLOY_DIR}/node_modules/
                     
                     # Create environment file
-                    sudo tee ${DEPLOY_DIR}/.env.production > /dev/null << EOF
+                    cat > ${DEPLOY_DIR}/.env.production << EOF
 NODE_ENV=production
 MONGODB_URI=${MONGODB_URI}
 JWT_SECRET=${JWT_SECRET}
@@ -117,11 +131,9 @@ THUMBNAIL_API=${THUMBNAIL_API}
 NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 EOF
                     
-                    # Set permissions
-                    sudo chown -R jenkins:jenkins ${DEPLOY_DIR}
-                    
                     # Start application
                     cd ${DEPLOY_DIR}
+                    export PATH="$PWD/node_modules/.bin:$PATH"
                     pm2 start npm --name "portfolio" -- start
                 '''
             }
@@ -152,7 +164,10 @@ EOF
         }
         failure {
             echo '❌ Pipeline failed!'
-            sh 'pm2 logs portfolio --lines 20 || true'
+            sh '''
+                export PATH="$PWD/node_modules/.bin:$PATH"
+                pm2 logs portfolio --lines 20 || echo "PM2 logs not available"
+            '''
         }
         always {
             cleanWs()

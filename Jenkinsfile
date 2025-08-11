@@ -67,14 +67,26 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '📦 Installing dependencies...'
-                sh 'npm ci'
+                sh '''
+                    # Install all dependencies (including devDependencies for TypeScript)
+                    npm ci
+                    
+                    # Verify TypeScript is available
+                    ./node_modules/.bin/tsc --version || echo "TypeScript verification failed"
+                '''
             }
         }
         
         stage('Build') {
             steps {
                 echo '🏗️ Building application...'
-                sh 'npm run build'
+                sh '''
+                    # Ensure NODE_ENV is not set to production during build
+                    export NODE_ENV=development
+                    
+                    # Build the application
+                    npm run build
+                '''
             }
         }
         

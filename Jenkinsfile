@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18-alpine'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
     
     environment {
         // Production configuration
@@ -41,6 +46,28 @@ pipeline {
             steps {
                 echo '🔄 Checking out code...'
                 checkout scm
+            }
+        }
+        
+        stage('Setup Node.js') {
+            steps {
+                echo '🔧 Setting up Node.js environment...'
+                sh '''
+                    # Install Node.js if not available
+                    if ! command -v node &> /dev/null; then
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                        sudo apt-get install -y nodejs
+                    fi
+                    
+                    # Install PM2 globally if not available
+                    if ! command -v pm2 &> /dev/null; then
+                        sudo npm install -g pm2
+                    fi
+                    
+                    node --version
+                    npm --version
+                    pm2 --version || echo "PM2 installation pending..."
+                '''
             }
         }
         

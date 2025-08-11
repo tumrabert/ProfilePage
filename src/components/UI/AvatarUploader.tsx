@@ -175,7 +175,7 @@ export default function AvatarUploader({
                     transformOrigin: 'center center',
                     transition: isDragging ? 'none' : 'transform 0.1s ease-out'
                   }}
-                  onError={(e) => {
+                  onError={() => {
                     console.error('Avatar preview image failed to load:', imageUrl || currentImage);
                   }}
                   onLoad={() => {

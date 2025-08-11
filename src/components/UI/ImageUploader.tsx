@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 
 interface ImageUploaderProps {
   currentImage?: string;
@@ -130,7 +131,7 @@ export default function ImageUploader({
         } else {
           // For fallback images, test loading as before
           const testImageLoad = (url: string, fallbacks: string[] = []) => {
-            const img = new Image();
+            const img = new window.Image();
             img.onload = () => {
               console.log('Image loaded successfully:', url);
               setImageUrl(url);
@@ -379,7 +380,7 @@ export default function ImageUploader({
               src={imageUrl}
               alt="Preview"
               className="w-full h-full object-cover"
-              onError={(e) => {
+              onError={() => {
                 console.error('Image failed to load:', imageUrl);
                 setError('Failed to load image. Please try generating a new preview or check the URL.');
               }}

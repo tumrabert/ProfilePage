@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { TechLogoProps, SelectedTechnology } from '@/types/technology';
 
 // Dynamic icon loader function
@@ -209,11 +209,11 @@ export default function TechLogo({ technology, size = 'md', showName = true, cla
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {!isLoading && IconComponent && (
-        <div className={`flex-shrink-0 ${sizeClasses[size]}`}>
-          <IconComponent 
-            className={`${sizeClasses[size]} ${technology.isCustom ? 'text-gray-400' : ''}`}
-            style={iconStyle}
-          />
+        <div 
+          className={`flex-shrink-0 ${sizeClasses[size]} ${technology.isCustom ? 'text-gray-400' : ''}`}
+          style={iconStyle}
+        >
+          <IconComponent />
         </div>
       )}
       {showName && technology.name && (
@@ -247,7 +247,7 @@ export function useTechnologyData() {
     };
   };
 
-  const searchTechnologies = (query: string, category?: string): SelectedTechnology[] => {
+  const searchTechnologies = (): SelectedTechnology[] => {
     // This would normally search through our technologies.json
     // For now, return empty array
     return [];

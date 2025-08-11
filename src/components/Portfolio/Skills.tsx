@@ -5,20 +5,20 @@ import { useUpdatePortfolio, ITechnology, ISkillCategory } from '@/hooks/usePort
 import { useState } from 'react';
 import TechLogo from '@/components/UI/TechLogo';
 import TechnologySelector from '@/components/UI/TechnologySelector';
-import DragDropList, { DragDropTextList } from '@/components/UI/DragDropList';
-import { Technology } from '@/types/technology';
+import DragDropList from '@/components/UI/DragDropList';
+import { SelectedTechnology } from '@/types/technology';
 
 interface SkillsProps {
   technologies?: ITechnology[];
   skillCategories?: ISkillCategory[];
 }
 
-export default function Skills({ technologies = [], skillCategories = [] }: SkillsProps) {
+export default function Skills({ technologies = [] }: SkillsProps) {
   const { isAuthenticated } = useAuth();
   const updatePortfolio = useUpdatePortfolio();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<ISkillCategory[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // const [selectedCategory, setSelectedCategory] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
 
   // Group technologies by category for editing
@@ -95,7 +95,7 @@ export default function Skills({ technologies = [], skillCategories = [] }: Skil
     setEditData(updated);
   };
 
-  const addTechnologyToCategory = (categoryIndex: number, selectedTech: Technology) => {
+  const addTechnologyToCategory = (categoryIndex: number, selectedTech: SelectedTechnology) => {
     const newTech: ITechnology = {
       name: selectedTech.name,
       category: editData[categoryIndex].name,
@@ -122,19 +122,19 @@ export default function Skills({ technologies = [], skillCategories = [] }: Skil
     setEditData(updated);
   };
 
-  const updateTechnologyInCategory = (categoryIndex: number, techIndex: number, field: keyof ITechnology, value: string | number) => {
-    const updated = editData.map((category, i) => 
-      i === categoryIndex 
-        ? {
-            ...category,
-            technologies: category.technologies.map((tech, j) => 
-              j === techIndex ? { ...tech, [field]: value } : tech
-            )
-          }
-        : category
-    );
-    setEditData(updated);
-  };
+  // const updateTechnologyInCategory = (categoryIndex: number, techIndex: number, field: keyof ITechnology, value: string | number) => {
+  //   const updated = editData.map((category, i) => 
+  //     i === categoryIndex 
+  //       ? {
+  //           ...category,
+  //           technologies: category.technologies.map((tech, j) => 
+  //             j === techIndex ? { ...tech, [field]: value } : tech
+  //           )
+  //         }
+  //       : category
+  //   );
+  //   setEditData(updated);
+  // };
 
   const reorderCategories = (reorderedCategories: ISkillCategory[]) => {
     // Update order field for each category

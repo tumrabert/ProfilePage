@@ -111,7 +111,7 @@ export default function SettingsSidebar({
             {sections.map((section) => (
               <button
                 key={section.id}
-                onClick={() => setActiveSection(section.id as any)}
+                onClick={() => setActiveSection(section.id as "contact" | "social" | "personal")}
                 className={`flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
                   activeSection === section.id
                     ? "bg-blue-600 text-white"

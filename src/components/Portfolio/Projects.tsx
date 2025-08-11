@@ -119,17 +119,20 @@ export default function Projects({ projects = [] }: ProjectsProps) {
       // Try to extract validation details from the error
       let specificError = errorMessage;
       if (error && typeof error === 'object' && 'response' in error) {
-        const response = (error as any).response;
+        const response = (error as Record<string, Record<string, unknown>>).response;
         if (response && response.data) {
           console.error('API Error Response:', response.data);
-          if (response.data.details) {
-            console.error('Validation Details:', response.data.details);
-            const fieldErrors = Object.keys(response.data.details).map(field => 
-              `${field}: ${response.data.details[field].message}`
+          const responseData = response.data as Record<string, unknown>;
+          if (responseData.details) {
+            console.error('Validation Details:', responseData.details);
+            const details = responseData.details as Record<string, Record<string, unknown>>;
+            const fieldErrors = Object.keys(details).map(field => 
+              `${field}: ${details[field].message}`
             ).join(', ');
             specificError = `Validation failed in fields: ${fieldErrors}`;
-          } else if (response.data.fields) {
-            specificError = `Validation failed in fields: ${response.data.fields.join(', ')}`;
+          } else if (responseData.fields) {
+            const fields = responseData.fields as string[];
+            specificError = `Validation failed in fields: ${fields.join(', ')}`;
           }
         }
       }
@@ -353,9 +356,9 @@ export default function Projects({ projects = [] }: ProjectsProps) {
                             Quick Tip: Generate Website Thumbnail
                           </p>
                           <div className="text-xs text-gray-300 space-y-1">
-                            <p>1. Switch to "Website Screenshot" tab above</p>
+                            <p>1. Switch to &quot;Website Screenshot&quot; tab above</p>
                             <p>2. Enter your demo URL: <code className="bg-gray-700 px-1 rounded text-blue-300">{project.demo}</code></p>
-                            <p>3. Click "Generate Thumbnail" button 📷</p>
+                            <p>3. Click &quot;Generate Thumbnail&quot; button 📷</p>
                           </div>
                         </div>
                       )}

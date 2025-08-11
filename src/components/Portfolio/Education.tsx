@@ -63,24 +63,24 @@ export default function Education({ educations = [] }: EducationProps) {
     updateEducation(eduIndex, 'details', details);
   };
 
-  const addDetail = (eduIndex: number, detail: string) => {
-    const currentDetails = editData[eduIndex].details || [];
-    updateEducation(eduIndex, 'details', [...currentDetails, detail]);
-  };
+  // const addDetail = (eduIndex: number, detail: string) => {
+  //   const currentDetails = editData[eduIndex].details || [];
+  //   updateEducation(eduIndex, 'details', [...currentDetails, detail]);
+  // };
 
-  const editDetail = (eduIndex: number, detailIndex: number, newDetail: string) => {
-    const currentDetails = editData[eduIndex].details || [];
-    const updatedDetails = currentDetails.map((detail, i) => 
-      i === detailIndex ? newDetail : detail
-    );
-    updateEducation(eduIndex, 'details', updatedDetails);
-  };
+  // const editDetail = (eduIndex: number, detailIndex: number, newDetail: string) => {
+  //   const currentDetails = editData[eduIndex].details || [];
+  //   const updatedDetails = currentDetails.map((detail, i) => 
+  //     i === detailIndex ? newDetail : detail
+  //   );
+  //   updateEducation(eduIndex, 'details', updatedDetails);
+  // };
 
-  const removeDetail = (eduIndex: number, detailIndex: number) => {
-    const currentDetails = editData[eduIndex].details || [];
-    const updatedDetails = currentDetails.filter((_, i) => i !== detailIndex);
-    updateEducation(eduIndex, 'details', updatedDetails);
-  };
+  // const removeDetail = (eduIndex: number, detailIndex: number) => {
+  //   const currentDetails = editData[eduIndex].details || [];
+  //   const updatedDetails = currentDetails.filter((_, i) => i !== detailIndex);
+  //   updateEducation(eduIndex, 'details', updatedDetails);
+  // };
 
   const reorderEducations = (reorderedEducations: IEducation[]) => {
     // Update order field for each education

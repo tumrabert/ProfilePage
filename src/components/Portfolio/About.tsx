@@ -31,6 +31,18 @@ export default function About({ data }: AboutProps) {
   const handleSave = async () => {
     try {
       const updatedIntro = {
+        name: data?.intro?.name || '',
+        email: data?.intro?.email || '',
+        phone: data?.intro?.phone || '',
+        location: data?.intro?.location || '',
+        github: data?.intro?.github || '',
+        linkedin: data?.intro?.linkedin || '',
+        instagram: data?.intro?.instagram || '',
+        twitter: data?.intro?.twitter || '',
+        website: data?.intro?.website || '',
+        avatar: data?.intro?.avatar || '',
+        title: data?.intro?.title || '',
+        description: data?.intro?.description || '',
         ...data?.intro,
         quickFacts: {
           ...data?.intro?.quickFacts,

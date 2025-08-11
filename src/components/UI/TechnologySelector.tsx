@@ -190,12 +190,12 @@ export default function TechnologySelector({
               <div className="px-4 py-8 text-center text-gray-400">
                 {searchQuery ? (
                   <div>
-                    <p>No technologies found for "{searchQuery}"</p>
+                    <p>No technologies found for &quot;{searchQuery}&quot;</p>
                     <button
                       onClick={() => handleSelect(createTechnology(searchQuery))}
                       className="mt-2 text-blue-400 hover:text-blue-300 text-sm"
                     >
-                      Add "{searchQuery}" as custom technology
+                      Add &quot;{searchQuery}&quot; as custom technology
                     </button>
                   </div>
                 ) : (

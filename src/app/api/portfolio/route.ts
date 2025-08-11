@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    console.log('About to save portfolio with technologies:', (portfolio as any).technologies);
+    console.log('About to save portfolio with technologies:', (portfolio as Record<string, unknown>).technologies);
     
     (portfolio as unknown as Record<string, unknown> & { version: number; save: () => Promise<unknown> }).version += 1;
     await (portfolio as unknown as Record<string, unknown> & { save: () => Promise<unknown> }).save();
@@ -90,13 +90,13 @@ export async function PUT(request: NextRequest) {
     
     // Check for MongoDB validation errors
     if (error && typeof error === 'object' && 'name' in error) {
-      if ((error as any).name === 'ValidationError') {
+      if ((error as Record<string, unknown>).name === 'ValidationError') {
         console.error('MongoDB Validation Error Details:');
-        const validationErrors = (error as any).errors;
+        const validationErrors = (error as Record<string, Record<string, unknown>>).errors;
         
         // Log each validation error in detail
         Object.keys(validationErrors).forEach(field => {
-          const fieldError = validationErrors[field];
+          const fieldError = validationErrors[field] as Record<string, unknown>;
           console.error(`  Field: ${field}`);
           console.error(`  Error: ${fieldError.message}`);
           console.error(`  Value: ${JSON.stringify(fieldError.value)}`);
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
           { 
             error: 'Validation failed', 
             details: validationErrors,
-            message: (error as any).message,
+            message: (error as Record<string, string>).message,
             fields: Object.keys(validationErrors)
           },
           { status: 400 }

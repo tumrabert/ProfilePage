@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePortfolio, IWorkExperience } from '@/hooks/usePortfolio';
 import { useState } from 'react';
-import { YearRangePicker, MonthYearRangePicker } from '@/components/UI/YearPicker';
+import { MonthYearRangePicker } from '@/components/UI/YearPicker';
 import DragDropList, { DragDropTextList } from '@/components/UI/DragDropList';
 
 interface ExperienceProps {

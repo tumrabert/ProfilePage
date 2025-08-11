@@ -96,55 +96,44 @@ pipeline {
             steps {
                 echo '🔧 Preparing deployment files...'
                 sh '''
-                    # Create production environment file
-                    cat > .env.production << EOF
-NODE_ENV=production
-MONGODB_URI=${MONGODB_URI}
-JWT_SECRET=${JWT_SECRET}
-DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
-DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
-GITHUB_TOKEN=${GITHUB_TOKEN}
-THUMBNAIL_API=${THUMBNAIL_API}
-NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-PORT=${APP_PORT}
-EOF
+                    # Export environment variables for docker-compose
+                    export NODE_ENV=production
+                    export MONGODB_URI="${MONGODB_URI}"
+                    export JWT_SECRET="${JWT_SECRET}"
+                    export DEFAULT_ADMIN_USERNAME="${DEFAULT_ADMIN_USERNAME}"
+                    export DEFAULT_ADMIN_PASSWORD="${DEFAULT_ADMIN_PASSWORD}"
+                    export GITHUB_TOKEN="${GITHUB_TOKEN}"
+                    export THUMBNAIL_API="${THUMBNAIL_API}"
+                    export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}"
+                    export PORT="${APP_PORT}"
+                    export MONGO_ROOT_PASSWORD="portfolio123"
+                    export REDIS_PASSWORD="redis123"
                     
                     # Verify environment file
-                    echo "📋 Production environment file created:"
-                    echo "----------------------------------------"
-                    cat .env.production | sed 's/=.*/=***HIDDEN***/' # Hide sensitive values in logs
-                    echo "----------------------------------------"
+                    echo "📋 Environment variables exported for production"
+                    echo "NODE_ENV: $NODE_ENV"
+                    echo "NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL"
+                    echo "PORT: $PORT"
                     
                     # Check if docker-compose file exists
-                    if [ ! -f "${COMPOSE_FILE}" ]; then
-                        echo "⚠️  Docker Compose file ${COMPOSE_FILE} not found!"
-                        echo "📝 Creating basic docker-compose.prod.yml..."
-                        
-                        # Create a basic docker-compose file if it doesn't exist
-                        cat > ${COMPOSE_FILE} << 'COMPOSE_EOF'
-version: '3.8'
-
-services:
-  app:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.production
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-COMPOSE_EOF
-                        
-                        echo "✅ Basic docker-compose.prod.yml created"
-                    else
+                    if [ -f "${COMPOSE_FILE}" ]; then
                         echo "✅ Using existing ${COMPOSE_FILE}"
+                        
+                        # Update docker-compose to remove version, env_file, and MongoDB service
+                        sed -i '/^version:/d' ${COMPOSE_FILE}
+                        sed -i '/env_file:/d' ${COMPOSE_FILE}
+                        sed -i '/- \.env/d' ${COMPOSE_FILE}
+                        
+                        # Remove MongoDB service and dependencies since using external DB
+                        sed -i '/# MongoDB Database/,/condition: service_healthy/d' ${COMPOSE_FILE}
+                        sed -i '/mongodb:/d' ${COMPOSE_FILE}
+                        sed -i '/depends_on:/,/condition: service_healthy/d' ${COMPOSE_FILE}
+                        
+                        echo "✅ Updated docker-compose.yml for production (removed MongoDB service)"
+                    else
+                        echo "❌ Docker Compose file ${COMPOSE_FILE} not found!"
+                        exit 1
+                    fi
                     fi
                 '''
             }
@@ -175,7 +164,24 @@ COMPOSE_EOF
             // Remove when condition to run on any branch for now
             steps {
                 echo '🚀 Deploying application...'
+                script {
+                    // Set environment variables for docker-compose
+                    env.NODE_ENV = 'production'
+                    env.REDIS_PASSWORD = 'redis123'
+                }
                 sh '''
+                    # Export all environment variables for docker-compose
+                    export NODE_ENV=production
+                    export MONGODB_URI="${MONGODB_URI}"
+                    export JWT_SECRET="${JWT_SECRET}"
+                    export DEFAULT_ADMIN_USERNAME="${DEFAULT_ADMIN_USERNAME}"
+                    export DEFAULT_ADMIN_PASSWORD="${DEFAULT_ADMIN_PASSWORD}"
+                    export GITHUB_TOKEN="${GITHUB_TOKEN}"
+                    export THUMBNAIL_API="${THUMBNAIL_API}"
+                    export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}"
+                    export PORT="${APP_PORT}"
+                    export REDIS_PASSWORD="redis123"
+                    
                     # Build and start the application
                     docker-compose -f ${COMPOSE_FILE} up -d --build
                     
@@ -198,6 +204,9 @@ COMPOSE_EOF
                     try {
                         sh '''
                             echo "⏳ Waiting for application to start (timeout: ${HEALTH_CHECK_TIMEOUT}s)..."
+                            
+                            # Export environment variables for docker-compose commands
+                            export REDIS_PASSWORD="redis123"
                             
                             # Wait for the application to be healthy
                             timeout ${HEALTH_CHECK_TIMEOUT} bash -c '
@@ -238,6 +247,8 @@ COMPOSE_EOF
                         
                         // Get detailed logs for debugging
                         sh '''
+                            export REDIS_PASSWORD="redis123"
+                            
                             echo "🔍 Debugging information:"
                             echo "Container status:"
                             docker-compose -f ${COMPOSE_FILE} ps
@@ -335,11 +346,10 @@ COMPOSE_EOF
             script {
                 try {
                     // Archive important files
-                    archiveArtifacts artifacts: '.env.production,docker-compose.prod.yml', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'docker-compose.prod.yml', allowEmptyArchive: true
                     
                     // Clean up sensitive files
                     sh '''
-                        rm -f .env.production || true
                         rm -f get-docker.sh || true
                     '''
                 } catch (Exception e) {

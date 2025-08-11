@@ -4,6 +4,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePortfolio, IIntro } from '@/hooks/usePortfolio';
 import { useState } from 'react';
 import Image from 'next/image';
+import AvatarUploader from '@/components/UI/AvatarUploader';
+
+// Utility function to ensure URL has proper protocol
+const ensureUrlProtocol = (url: string | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:')) {
+    return url;
+  }
+  return `https://${url}`;
+};
 
 interface HeroProps {
   data?: IIntro;
@@ -86,6 +96,25 @@ export default function Hero({ data }: HeroProps) {
                   rows={4}
                   placeholder="Your description"
                 />
+                
+                {/* Avatar Upload Section */}
+                <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-600">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Profile Avatar
+                  </label>
+                  <AvatarUploader
+                    currentImage={editData?.avatar}
+                    onImageChange={(imageUrl, positioning) => {
+                      console.log('Avatar changed:', imageUrl, positioning);
+                      setEditData(prev => prev ? {
+                        ...prev, 
+                        avatar: imageUrl,
+                        avatarPositioning: positioning
+                      } : null);
+                    }}
+                    className="w-full"
+                  />
+                </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={handleSave}
@@ -123,15 +152,33 @@ export default function Hero({ data }: HeroProps) {
                     </a>
                   )}
                   {data.github && (
-                    <a href={`https://github.com/${data.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-blue-400 transition-colors">
+                    <a href={ensureUrlProtocol(data.github)} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-blue-400 transition-colors">
                       <i className="fab fa-github mr-2"></i>
-                      {data.github}
+                      {data.github.replace(/^https?:\/\//, '').replace(/^github\.com\//, '')}
+                    </a>
+                  )}
+                  {data.linkedin && (
+                    <a href={ensureUrlProtocol(data.linkedin)} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-blue-400 transition-colors">
+                      <i className="fab fa-linkedin mr-2"></i>
+                      LinkedIn
+                    </a>
+                  )}
+                  {data.instagram && (
+                    <a href={ensureUrlProtocol(data.instagram)} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-pink-400 transition-colors">
+                      <i className="fab fa-instagram mr-2"></i>
+                      Instagram
+                    </a>
+                  )}
+                  {data.twitter && (
+                    <a href={ensureUrlProtocol(data.twitter)} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-blue-400 transition-colors">
+                      <i className="fab fa-twitter mr-2"></i>
+                      Twitter
                     </a>
                   )}
                   {data.website && (
-                    <a href={`https://${data.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-blue-400 transition-colors">
+                    <a href={ensureUrlProtocol(data.website)} target="_blank" rel="noopener noreferrer" className="flex items-center text-gray-300 hover:text-green-400 transition-colors">
                       <i className="fas fa-globe mr-2"></i>
-                      {data.website}
+                      Website
                     </a>
                   )}
                 </div>
@@ -162,15 +209,35 @@ export default function Hero({ data }: HeroProps) {
             <div className="relative">
               <div className="w-64 h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden shadow-2xl ring-4 ring-blue-500 ring-opacity-50 animate-fade-in-delay-2 relative">
                 {data.avatar ? (
-                  <Image
-                    src={data.avatar}
-                    alt={data.name}
-                    fill
-                    className="object-cover"
-                  />
+                  <div 
+                    className="w-full h-full relative"
+                    style={{
+                      transform: data.avatarPositioning 
+                        ? `translate(${(data.avatarPositioning.x - 50) * 2.56}px, ${(data.avatarPositioning.y - 50) * 2.56}px) scale(${data.avatarPositioning.scale})`
+                        : 'none',
+                      transformOrigin: 'center center'
+                    }}
+                  >
+                    <Image
+                      src={data.avatar}
+                      alt={data.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                     <i className="fas fa-user text-6xl text-white opacity-80"></i>
+                  </div>
+                )}
+                
+                {/* Edit Avatar Button - Only show when authenticated */}
+                {isAuthenticated && !isEditing && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={handleEdit}>
+                    <div className="text-center text-white">
+                      <i className="fas fa-camera text-2xl mb-2"></i>
+                      <p className="text-sm">Change Avatar</p>
+                    </div>
                   </div>
                 )}
               </div>

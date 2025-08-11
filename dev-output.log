@@ -1,0 +1,30 @@
+
+> portfolio-nextjs@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use by process 67529, using available port 3001 instead.
+   ▲ Next.js 15.4.6 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.171:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 1441ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.6s
+ GET / 200 in 3929ms
+ ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+   ▲ Next.js 15.4.6 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.171:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 1391ms
+   Reload env: .env
+   Reload env: .env
+   Reload env: .env
+   Reload env: .env
+   Reload env: .env
+   Reload env: .env
+   Reload env: .env

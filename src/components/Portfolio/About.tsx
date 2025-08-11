@@ -13,26 +13,67 @@ export default function About({ data }: AboutProps) {
   const updatePortfolio = useUpdatePortfolio();
   const [isEditing, setIsEditing] = useState(false);
   const [editSummary, setEditSummary] = useState('');
+  const [editInterests, setEditInterests] = useState<string[]>([]);
+  const [editYearsOfExperience, setEditYearsOfExperience] = useState<number>(0);
+  const [editProjectsCount, setEditProjectsCount] = useState<number>(0);
+  const [editTechnologiesCount, setEditTechnologiesCount] = useState<number>(0);
 
   const handleEdit = () => {
     if (!data) return;
     setEditSummary(data.summary || '');
+    setEditInterests(data.intro?.quickFacts?.hobbies || []);
+    setEditYearsOfExperience(data.intro?.quickFacts?.yearOfExperience || 0);
+    setEditProjectsCount(data.intro?.quickFacts?.projectsCount || data.displayProjects?.length || 0);
+    setEditTechnologiesCount(data.intro?.quickFacts?.technologiesCount || data.technologies?.length || 0);
     setIsEditing(true);
   };
 
   const handleSave = async () => {
     try {
-      await updatePortfolio.mutateAsync({ summary: editSummary });
+      const updatedIntro = {
+        ...data?.intro,
+        quickFacts: {
+          ...data?.intro?.quickFacts,
+          hobbies: editInterests,
+          yearOfExperience: editYearsOfExperience,
+          projectsCount: editProjectsCount,
+          technologiesCount: editTechnologiesCount
+        }
+      };
+      
+      await updatePortfolio.mutateAsync({ 
+        summary: editSummary,
+        intro: updatedIntro
+      });
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update summary:', error);
-      alert('Failed to update summary. Please try again.');
+      console.error('Failed to update about section:', error);
+      alert('Failed to update about section. Please try again.');
     }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setEditSummary('');
+    setEditInterests([]);
+    setEditYearsOfExperience(0);
+    setEditProjectsCount(0);
+    setEditTechnologiesCount(0);
+  };
+
+  const addInterest = () => {
+    setEditInterests([...editInterests, '']);
+  };
+
+  const updateInterest = (index: number, value: string) => {
+    const updated = editInterests.map((interest, i) => 
+      i === index ? value : interest
+    );
+    setEditInterests(updated);
+  };
+
+  const removeInterest = (index: number) => {
+    setEditInterests(editInterests.filter((_, i) => i !== index));
   };
 
   if (!data) {
@@ -70,13 +111,91 @@ export default function About({ data }: AboutProps) {
             {/* Main Content */}
             <div className="lg:col-span-2">
               {isEditing ? (
-                <div className="space-y-4">
-                  <textarea
-                    value={editSummary}
-                    onChange={(e) => setEditSummary(e.target.value)}
-                    className="w-full h-64 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white focus:outline-none focus:border-blue-400 resize-none"
-                    placeholder="Write your professional summary..."
-                  />
+                <div className="space-y-6">
+                  {/* Summary Editor */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Professional Summary</label>
+                    <textarea
+                      value={editSummary}
+                      onChange={(e) => setEditSummary(e.target.value)}
+                      className="w-full h-64 bg-gray-700 border border-gray-600 rounded-lg p-4 text-white focus:outline-none focus:border-blue-400 resize-none"
+                      placeholder="Write your professional summary..."
+                    />
+                  </div>
+                  
+                  {/* Interests Editor */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Interests & Hobbies</label>
+                    <div className="space-y-2">
+                      {editInterests.map((interest, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={interest}
+                            onChange={(e) => updateInterest(index, e.target.value)}
+                            placeholder="Enter an interest or hobby..."
+                            className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                          />
+                          <button
+                            onClick={() => removeInterest(index)}
+                            className="text-red-400 hover:text-red-300 px-3 py-2 rounded-lg transition-colors"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={addInterest}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-400 hover:text-white hover:border-blue-400 transition-colors"
+                      >
+                        <i className="fas fa-plus mr-2"></i>Add Interest
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Facts Editor */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Quick Facts</label>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Years of Experience</label>
+                        <input
+                          type="number"
+                          value={editYearsOfExperience}
+                          onChange={(e) => setEditYearsOfExperience(parseInt(e.target.value) || 0)}
+                          min="0"
+                          max="50"
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                          placeholder="Years of experience"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Projects Completed</label>
+                        <input
+                          type="number"
+                          value={editProjectsCount}
+                          onChange={(e) => setEditProjectsCount(parseInt(e.target.value) || 0)}
+                          min="0"
+                          max="1000"
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                          placeholder="Number of projects"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Technologies Known</label>
+                        <input
+                          type="number"
+                          value={editTechnologiesCount}
+                          onChange={(e) => setEditTechnologiesCount(parseInt(e.target.value) || 0)}
+                          min="0"
+                          max="500"
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                          placeholder="Number of technologies"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="flex space-x-2">
                     <button
                       onClick={handleSave}
@@ -158,13 +277,13 @@ export default function About({ data }: AboutProps) {
                   <div className="flex justify-between">
                     <span className="text-gray-400">Projects</span>
                     <span className="text-white font-semibold">
-                      {data.displayProjects?.length || 0}
+                      {intro?.quickFacts?.projectsCount || data.displayProjects?.length || 0}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Technologies</span>
                     <span className="text-white font-semibold">
-                      {data.technologies?.length || 0}+
+                      {intro?.quickFacts?.technologiesCount || data.technologies?.length || 0}+
                     </span>
                   </div>
                 </div>

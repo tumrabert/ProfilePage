@@ -8,13 +8,33 @@ export interface IIntro {
   email: string;
   github?: string;
   linkedin?: string;
+  instagram?: string;
+  twitter?: string;
   location?: string;
   website?: string;
+  avatar?: string;
+  avatarPositioning?: {
+    x: number;
+    y: number;
+    scale: number;
+  };
+  title?: string;
+  description?: string;
+  quickFacts?: {
+    yearOfExperience?: number;
+    hobbies?: string[];
+    favoriteStack?: string[];
+    workingOn?: string;
+    projectsCount?: number;
+    technologiesCount?: number;
+  };
 }
 
 export interface ITechnology {
-  section: string;
-  details: string[];
+  _id?: string;
+  name: string;
+  category: string;
+  order?: number;
 }
 
 export interface IWorkExperience {
@@ -44,9 +64,10 @@ export interface IProject {
   demo?: string;
   technologies: string[];
   screenshotUrl?: string;
+  image?: string; // Added for compatibility
   featured: boolean;
   order: number;
-  hide: boolean;
+  hide?: boolean;
 }
 
 export interface IPortfolio extends Document {
@@ -68,13 +89,32 @@ const IntroSchema = new Schema<IIntro>({
   email: { type: String, required: true, trim: true, lowercase: true },
   github: { type: String, trim: true },
   linkedin: { type: String, trim: true },
+  instagram: { type: String, trim: true },
+  twitter: { type: String, trim: true },
   location: { type: String, trim: true },
-  website: { type: String, trim: true }
+  website: { type: String, trim: true },
+  avatar: { type: String, trim: true },
+  avatarPositioning: {
+    x: { type: Number, default: 50 },
+    y: { type: Number, default: 50 },
+    scale: { type: Number, default: 1 }
+  },
+  title: { type: String, trim: true },
+  description: { type: String, trim: true },
+  quickFacts: {
+    yearOfExperience: { type: Number },
+    hobbies: [{ type: String, trim: true }],
+    favoriteStack: [{ type: String, trim: true }],
+    workingOn: { type: String, trim: true },
+    projectsCount: { type: Number },
+    technologiesCount: { type: Number }
+  }
 }, { _id: false });
 
 const TechnologySchema = new Schema<ITechnology>({
-  section: { type: String, required: true, trim: true },
-  details: [{ type: String, required: true, trim: true }]
+  name: { type: String, required: true, trim: true },
+  category: { type: String, required: true, trim: true },
+  order: { type: Number, default: 0 }
 }, { _id: false });
 
 const WorkExperienceSchema = new Schema<IWorkExperience>({
@@ -98,14 +138,25 @@ const EducationSchema = new Schema<IEducation>({
 }, { _id: false });
 
 const ProjectSchema = new Schema<IProject>({
-  name: { type: String, required: true, trim: true },
-  description: { type: String, required: true, trim: true },
+  name: { 
+    type: String, 
+    required: [true, 'Project name is required'], 
+    trim: true,
+    minlength: [1, 'Project name cannot be empty']
+  },
+  description: { 
+    type: String, 
+    required: [true, 'Project description is required'], 
+    trim: true,
+    minlength: [1, 'Project description cannot be empty']
+  },
   github: { type: String, trim: true },
   demo: { type: String, trim: true },
   technologies: [{ type: String, trim: true }],
   screenshotUrl: { type: String, trim: true },
+  image: { type: String, trim: true }, // Added for compatibility
   featured: { type: Boolean, default: false },
-  order: { type: Number, default: 0 },
+  order: { type: Number, default: 0, min: 0 },
   hide: { type: Boolean, default: false }
 }, { _id: false });
 

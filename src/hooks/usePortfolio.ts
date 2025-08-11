@@ -4,27 +4,44 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface ITechnology {
   _id?: string;
-  section: string;
-  details: string[];
+  name: string;
+  category: string;
+  order?: number;
+}
+
+export interface ISkillCategory {
+  _id?: string;
+  name: string;
+  technologies: ITechnology[];
+  order?: number;
 }
 
 export interface IIntro {
   name: string;
   nickname?: string;
   email: string;
-  phone: string;
-  location: string;
+  phone?: string;
+  location?: string;
   avatar?: string;
+  avatarPositioning?: {
+    x: number;
+    y: number;
+    scale: number;
+  };
   title?: string;
   description?: string;
   github?: string;
   linkedin?: string;
+  instagram?: string;
+  twitter?: string;
   website?: string;
   quickFacts?: {
-    yearOfExperience: number;
-    hobbies: string[];
-    favoriteStack: string[];
-    workingOn: string;
+    yearOfExperience?: number;
+    hobbies?: string[];
+    favoriteStack?: string[];
+    workingOn?: string;
+    projectsCount?: number;
+    technologiesCount?: number;
   };
 }
 
@@ -60,6 +77,9 @@ export interface IProject {
   featured: boolean;
   order?: number;
   hide?: boolean;
+  image?: string;
+  screenshotUrl?: string; // Added for compatibility with database model
+  images?: string[];
 }
 
 export interface IPortfolio {
@@ -68,7 +88,8 @@ export interface IPortfolio {
   summary: string;
   workExperiences: IWorkExperience[];
   educations: IEducation[];
-  technologies: ITechnology[];
+  technologies: ITechnology[]; // Keep for backward compatibility
+  skillCategories?: ISkillCategory[]; // New structure
   displayProjects: IProject[];
   achievements?: unknown[];
   certificates?: unknown[];
@@ -111,6 +132,10 @@ export function useUpdatePortfolio() {
     mutationFn: async (updates: Partial<IPortfolio>) => {
       const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       
+      if (!token) {
+        throw new Error('Authentication token not found. Please login again.');
+      }
+      
       const response = await fetch('/api/portfolio', {
         method: 'PUT',
         headers: {
@@ -120,14 +145,34 @@ export function useUpdatePortfolio() {
         body: JSON.stringify(updates),
       });
       
+      if (response.status === 401) {
+        // Token expired, clear it and ask user to login
+        localStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminToken');
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      if (response.status === 403) {
+        throw new Error('Insufficient permissions. Admin access required.');
+      }
+      
       if (!response.ok) {
-        throw new Error('Failed to update portfolio');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update portfolio (${response.status})`);
       }
       
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    },
+    onError: (error) => {
+      console.error('Portfolio update failed:', error);
+      // If authentication error, redirect to login or show login modal
+      if (error.message.includes('login again') || error.message.includes('Session expired')) {
+        // You could trigger a login modal or redirect here
+        window.location.reload(); // Simple solution - reload to show login
+      }
     },
   });
 }

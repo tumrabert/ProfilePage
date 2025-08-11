@@ -2,6 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+// Utility function to ensure URL has proper protocol
+const ensureUrlProtocol = (url: string | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:')) {
+    return url;
+  }
+  return `https://${url}`;
+};
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   
@@ -11,10 +20,56 @@ export default function Footer() {
       const response = await fetch('/api/portfolio');
       if (!response.ok) return null;
       const data = await response.json();
-      return data.portfolio;
+      return data.data; // Fixed: use data.data instead of data.portfolio
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Get social media links from portfolio data
+  const socialLinks = [
+    {
+      name: 'GitHub',
+      url: portfolio?.intro?.github,
+      icon: 'fab fa-github',
+      label: 'GitHub Profile',
+      hoverColor: 'hover:bg-gray-700'
+    },
+    {
+      name: 'LinkedIn',
+      url: portfolio?.intro?.linkedin,
+      icon: 'fab fa-linkedin',
+      label: 'LinkedIn Profile',
+      hoverColor: 'hover:bg-blue-600'
+    },
+    {
+      name: 'Twitter',
+      url: portfolio?.intro?.twitter,
+      icon: 'fab fa-twitter',
+      label: 'Twitter Profile',
+      hoverColor: 'hover:bg-blue-500'
+    },
+    {
+      name: 'Instagram',
+      url: portfolio?.intro?.instagram,
+      icon: 'fab fa-instagram',
+      label: 'Instagram Profile',
+      hoverColor: 'hover:bg-pink-600'
+    },
+    {
+      name: 'Website',
+      url: portfolio?.intro?.website,
+      icon: 'fas fa-globe',
+      label: 'Personal Website',
+      hoverColor: 'hover:bg-green-600'
+    },
+    {
+      name: 'Email',
+      url: portfolio?.intro?.email ? `mailto:${portfolio.intro.email}` : undefined,
+      icon: 'fas fa-envelope',
+      label: 'Send Email',
+      hoverColor: 'hover:bg-red-600'
+    }
+  ].filter(link => link.url && link.url.trim() !== ''); // Only show links that exist
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -36,9 +91,6 @@ export default function Footer() {
             {/* Brand Section */}
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                  <i className="fas fa-code text-white"></i>
-                </div>
                 <h3 className="text-xl font-bold text-white">
                   {portfolio?.intro?.name || 'Portfolio'}
                 </h3>
@@ -49,42 +101,22 @@ export default function Footer() {
               </p>
               
               {/* Social Links */}
-              <div className="flex space-x-4">
-                <a 
-                  href="https://github.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-700 hover:text-white transition-colors group"
-                  aria-label="GitHub Profile"
-                >
-                  <i className="fab fa-github group-hover:scale-110 transition-transform"></i>
-                </a>
-                <a 
-                  href="https://linkedin.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-300 hover:bg-blue-600 hover:text-white transition-colors group"
-                  aria-label="LinkedIn Profile"
-                >
-                  <i className="fab fa-linkedin group-hover:scale-110 transition-transform"></i>
-                </a>
-                <a 
-                  href={`mailto:${portfolio?.intro?.email || 'contact@example.com'}`}
-                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-300 hover:bg-red-600 hover:text-white transition-colors group"
-                  aria-label="Send Email"
-                >
-                  <i className="fas fa-envelope group-hover:scale-110 transition-transform"></i>
-                </a>
-                <a 
-                  href="https://twitter.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-300 hover:bg-blue-500 hover:text-white transition-colors group"
-                  aria-label="Twitter Profile"
-                >
-                  <i className="fab fa-twitter group-hover:scale-110 transition-transform"></i>
-                </a>
-              </div>
+              {socialLinks.length > 0 && (
+                <div className="flex space-x-4">
+                  {socialLinks.map((link) => (
+                    <a 
+                      key={link.name}
+                      href={ensureUrlProtocol(link.url)} 
+                      target={link.url?.startsWith('mailto:') ? '_self' : '_blank'}
+                      rel={link.url?.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                      className={`w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-300 ${link.hoverColor} hover:text-white transition-colors group`}
+                      aria-label={link.label}
+                    >
+                      <i className={`${link.icon} group-hover:scale-110 transition-transform`}></i>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Quick Navigation */}

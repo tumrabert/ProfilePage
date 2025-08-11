@@ -3,6 +3,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdatePortfolio, IEducation } from '@/hooks/usePortfolio';
 import { useState } from 'react';
+import { YearRangePicker } from '@/components/UI/YearPicker';
+import DragDropList, { DragDropTextList } from '@/components/UI/DragDropList';
 
 interface EducationProps {
   educations?: IEducation[];
@@ -50,11 +52,43 @@ export default function Education({ educations = [] }: EducationProps) {
     setEditData(editData.filter((_, i) => i !== index));
   };
 
-  const updateEducation = (index: number, field: keyof IEducation, value: string | string[]) => {
+  const updateEducation = (index: number, field: keyof IEducation, value: string | string[] | number) => {
     const updated = editData.map((edu, i) => 
       i === index ? { ...edu, [field]: value } : edu
     );
     setEditData(updated);
+  };
+
+  const updateEducationDetails = (eduIndex: number, details: string[]) => {
+    updateEducation(eduIndex, 'details', details);
+  };
+
+  const addDetail = (eduIndex: number, detail: string) => {
+    const currentDetails = editData[eduIndex].details || [];
+    updateEducation(eduIndex, 'details', [...currentDetails, detail]);
+  };
+
+  const editDetail = (eduIndex: number, detailIndex: number, newDetail: string) => {
+    const currentDetails = editData[eduIndex].details || [];
+    const updatedDetails = currentDetails.map((detail, i) => 
+      i === detailIndex ? newDetail : detail
+    );
+    updateEducation(eduIndex, 'details', updatedDetails);
+  };
+
+  const removeDetail = (eduIndex: number, detailIndex: number) => {
+    const currentDetails = editData[eduIndex].details || [];
+    const updatedDetails = currentDetails.filter((_, i) => i !== detailIndex);
+    updateEducation(eduIndex, 'details', updatedDetails);
+  };
+
+  const reorderEducations = (reorderedEducations: IEducation[]) => {
+    // Update order field for each education
+    const updatedEducations = reorderedEducations.map((edu, index) => ({
+      ...edu,
+      order: index
+    }));
+    setEditData(updatedEducations);
   };
 
   return (
@@ -72,74 +106,79 @@ export default function Education({ educations = [] }: EducationProps) {
 
           {isEditing ? (
             <div className="space-y-6">
-              {editData.map((edu, index) => (
-                <div key={index} className="bg-gray-700 p-6 rounded-xl border border-gray-600">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-white">Education #{index + 1}</h3>
-                    <button
-                      onClick={() => removeEducation(index)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
+              <DragDropList
+                items={editData}
+                onItemsChange={reorderEducations}
+                renderItem={(edu, index) => (
+                  <div className="bg-gray-700 p-6 rounded-xl border border-gray-600">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold text-white flex items-center">
+                        <i className="fas fa-grip-vertical text-gray-400 mr-2 cursor-grab"></i>
+                        Education #{index + 1}
+                      </h3>
+                      <button
+                        onClick={() => removeEducation(index)}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <input
+                        type="text"
+                        value={edu.university}
+                        onChange={(e) => updateEducation(index, 'university', e.target.value)}
+                        placeholder="University Name"
+                        className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
+                      />
+                      <input
+                        type="text"
+                        value={edu.degree}
+                        onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                        placeholder="Degree (e.g., Bachelor's, Master's)"
+                        className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm text-gray-400 mb-2">Study Period</label>
+                      <YearRangePicker
+                        startYear={edu.start_year}
+                        endYear={edu.end_year}
+                        onStartYearChange={(year) => updateEducation(index, 'start_year', year)}
+                        onEndYearChange={(year) => updateEducation(index, 'end_year', year)}
+                        allowPresent={true}
+                        className="grid grid-cols-2 gap-4"
+                      />
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm text-gray-400 mb-2">GPAX (optional)</label>
+                      <input
+                        type="text"
+                        value={edu.GPAX || ''}
+                        onChange={(e) => updateEducation(index, 'GPAX', e.target.value)}
+                        placeholder="3.50"
+                        className="w-full bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">Education Details</label>
+                      <DragDropTextList
+                        items={edu.details || []}
+                        onItemsChange={(newDetails) => updateEducationDetails(index, newDetails)}
+                        addButtonText="Add Detail"
+                        placeholder="e.g., Relevant coursework, achievements, honors"
+                        className="bg-gray-600 border border-gray-500"
+                      />
+                    </div>
                   </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <input
-                      type="text"
-                      value={edu.university}
-                      onChange={(e) => updateEducation(index, 'university', e.target.value)}
-                      placeholder="University Name"
-                      className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                    <input
-                      type="text"
-                      value={edu.degree}
-                      onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                      placeholder="Degree (e.g., Bachelor's, Master's)"
-                      className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                    <input
-                      type="text"
-                      value={edu.start_year}
-                      onChange={(e) => updateEducation(index, 'start_year', e.target.value)}
-                      placeholder="Start Year"
-                      className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                    <input
-                      type="text"
-                      value={edu.end_year}
-                      onChange={(e) => updateEducation(index, 'end_year', e.target.value)}
-                      placeholder="End Year"
-                      className="bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm text-gray-400 mb-2">GPAX (optional)</label>
-                    <input
-                      type="text"
-                      value={edu.GPAX || ''}
-                      onChange={(e) => updateEducation(index, 'GPAX', e.target.value)}
-                      placeholder="3.50"
-                      className="w-full bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">Details (comma-separated)</label>
-                    <input
-                      type="text"
-                      value={edu.details.join(', ')}
-                      onChange={(e) => updateEducation(index, 'details', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                      placeholder="Relevant coursework, achievements, honors"
-                      className="w-full bg-gray-600 border border-gray-500 rounded-lg p-3 text-white focus:outline-none focus:border-blue-400"
-                    />
-                  </div>
-                </div>
-              ))}
+                )}
+              />
               
-              <div className="flex justify-between">
+              <div className="flex justify-between mt-6">
                 <button
                   onClick={addEducation}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -165,9 +204,9 @@ export default function Education({ educations = [] }: EducationProps) {
               </div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="flex flex-wrap justify-center gap-8">
               {educations.length > 0 ? educations.map((edu, index) => (
-                <div key={edu._id || index} className="bg-gray-700/50 p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-600 hover:border-blue-500/50">
+                <div key={edu._id || index} className="w-full max-w-md bg-gray-700/50 p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-600 hover:border-blue-500/50">
                   {/* Institution Header */}
                   <div className="flex items-start mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">

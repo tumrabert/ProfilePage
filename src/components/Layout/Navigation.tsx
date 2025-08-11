@@ -1,11 +1,79 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePortfolio } from '@/hooks/usePortfolio';
+
+// Utility function to ensure URL has proper protocol
+const ensureUrlProtocol = (url: string | undefined): string => {
+  if (!url) return '';
+  
+  // Clean up the URL
+  let cleanUrl = url.trim();
+  
+  // Handle mailto links
+  if (cleanUrl.startsWith('mailto:') || cleanUrl.includes('@')) {
+    return cleanUrl.startsWith('mailto:') ? cleanUrl : `mailto:${cleanUrl}`;
+  }
+  
+  // If it already has a protocol, return as is
+  if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+    return cleanUrl;
+  }
+  
+  // Remove common prefixes that might cause issues
+  if (cleanUrl.startsWith('www.')) {
+    cleanUrl = cleanUrl.substring(4);
+  }
+  
+  // Add https protocol
+  return `https://${cleanUrl}`;
+};
 
 export default function Navigation() {
+  const { data: portfolio } = usePortfolio();
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Get social media links from portfolio data
+  const socialLinks = [
+    {
+      name: 'GitHub',
+      url: portfolio?.intro?.github,
+      icon: 'fab fa-github',
+      label: 'GitHub Profile'
+    },
+    {
+      name: 'LinkedIn',
+      url: portfolio?.intro?.linkedin,
+      icon: 'fab fa-linkedin',
+      label: 'LinkedIn Profile'
+    },
+    {
+      name: 'Twitter',
+      url: portfolio?.intro?.twitter,
+      icon: 'fab fa-twitter',
+      label: 'Twitter Profile'
+    },
+    {
+      name: 'Instagram',
+      url: portfolio?.intro?.instagram,
+      icon: 'fab fa-instagram',
+      label: 'Instagram Profile'
+    },
+    {
+      name: 'Website',
+      url: portfolio?.intro?.website,
+      icon: 'fas fa-globe',
+      label: 'Personal Website'
+    },
+    {
+      name: 'Email',
+      url: portfolio?.intro?.email ? `mailto:${portfolio.intro.email}` : undefined,
+      icon: 'fas fa-envelope',
+      label: 'Send Email'
+    }
+  ].filter(link => link.url && link.url.trim() !== ''); // Only show links that exist
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,10 +134,7 @@ export default function Navigation() {
             
             {/* Logo/Brand */}
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <i className="fas fa-code text-white"></i>
-              </div>
-              <span className="ml-3 font-bold text-white text-xl">Portfolio</span>
+              <span className="font-bold text-white text-xl">Portfolio</span>
             </div>
 
             {/* Desktop Navigation Items */}
@@ -95,33 +160,22 @@ export default function Navigation() {
             {/* Social Links & Mobile Menu Button */}
             <div className="flex items-center space-x-4">
               {/* Social Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-3">
-                <a 
-                  href="https://github.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-                  aria-label="GitHub Profile"
-                >
-                  <i className="fab fa-github text-sm"></i>
-                </a>
-                <a 
-                  href="https://linkedin.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-                  aria-label="LinkedIn Profile"
-                >
-                  <i className="fab fa-linkedin text-sm"></i>
-                </a>
-                <a 
-                  href="mailto:contact@example.com"
-                  className="w-9 h-9 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-                  aria-label="Send Email"
-                >
-                  <i className="fas fa-envelope text-sm"></i>
-                </a>
-              </div>
+              {socialLinks.length > 0 && (
+                <div className="hidden md:flex items-center space-x-3">
+                  {socialLinks.map((link) => (
+                    <a 
+                      key={link.name}
+                      href={ensureUrlProtocol(link.url)} 
+                      target={link.url?.startsWith('mailto:') ? '_self' : '_blank'}
+                      rel={link.url?.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                      className="w-9 h-9 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
+                      aria-label={link.label}
+                    >
+                      <i className={`${link.icon} text-sm`}></i>
+                    </a>
+                  ))}
+                </div>
+              )}
 
               {/* Mobile Menu Button */}
               <button
@@ -164,33 +218,22 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Social Links */}
-          <div className="flex justify-center space-x-4 pt-4 border-t border-gray-700">
-            <a 
-              href="https://github.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-              aria-label="GitHub Profile"
-            >
-              <i className="fab fa-github"></i>
-            </a>
-            <a 
-              href="https://linkedin.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-              aria-label="LinkedIn Profile"
-            >
-              <i className="fab fa-linkedin"></i>
-            </a>
-            <a 
-              href="mailto:contact@example.com"
-              className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
-              aria-label="Send Email"
-            >
-              <i className="fas fa-envelope"></i>
-            </a>
-          </div>
+          {socialLinks.length > 0 && (
+            <div className="flex justify-center space-x-4 pt-4 border-t border-gray-700">
+              {socialLinks.map((link) => (
+                <a 
+                  key={link.name}
+                  href={ensureUrlProtocol(link.url)} 
+                  target={link.url?.startsWith('mailto:') ? '_self' : '_blank'}
+                  rel={link.url?.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                  className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
+                  aria-label={link.label}
+                >
+                  <i className={link.icon}></i>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -35,6 +35,9 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 - **Featured projects** system with filtering
 - **Skills proficiency levels** with visual progress bars
 - **Timeline-based** experience and education display
+- **Advanced avatar management** with real-time positioning and cropping
+- **Website screenshot generation** for project previews using thumbnail.ws API
+- **Drag-and-drop project reordering** for custom portfolio layout
 
 ### 🧭 **Modern Navigation System**
 - **Sticky horizontal navbar** that stays at top during scrolling
@@ -46,13 +49,22 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 - **Full-width layout** optimized for modern screen sizes
 
 ### 🏗️ **Portfolio Sections**
-- **Hero Section**: Dynamic introduction with quick facts and CTA buttons
+- **Hero Section**: Dynamic introduction with customizable avatar positioning and quick facts
 - **About Me**: Professional summary with contact information and interests
 - **Work Experience**: Timeline view with technologies and achievements
 - **Education**: Academic background with honors and achievements
-- **Skills & Technologies**: Categorized skills with proficiency levels
-- **Featured Projects**: Project showcase with live demos and GitHub links
-- **Responsive Footer**: Social links and contact information
+- **Skills & Technologies**: Categorized skills with proficiency levels and custom tech logos
+- **Featured Projects**: Advanced project showcase with website screenshot previews, live demos, and GitHub links
+- **Responsive Footer**: Clean footer without fallback logos, social links and contact information
+
+### ✨ **Advanced Features (Latest Updates)**
+- **🖼️ Website Screenshot Generation**: Automated thumbnail creation for projects using thumbnail.ws API with fallback services
+- **👤 Advanced Avatar System**: Real-time avatar positioning with circular preview, drag-and-drop positioning, and zoom controls  
+- **🎯 Smart Image Handling**: Separate upload modes for direct images vs website screenshots with intelligent URL detection
+- **📱 Enhanced Mobile UX**: Improved textarea handling with proper newline support and mobile-optimized controls
+- **🔧 Clean UI Design**: Removed fallback `</>` logos from navbar, skills, and footer for cleaner appearance
+- **🔗 Smart URL Processing**: Automatic protocol handling for GitHub links and external URLs to prevent localhost redirects
+- **⚡ Real-time Preview**: Instant visual feedback for avatar positioning without requiring save operations
 
 ### 🚀 **Performance & Deployment**
 - **MongoDB integration** with Mongoose ODM
@@ -60,6 +72,7 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 - **Production-ready** build configuration
 - **SEO optimized** with proper meta tags
 - **Font optimization** with Inter font family
+- **Environment-based API keys** for external services integration
 
 ## 🚀 Quick Start
 
@@ -85,7 +98,7 @@ docker-compose -f docker-compose.dev.yml up --build -d
 - 🐳 **Full Docker setup** with MongoDB
 - 🎯 **Development optimized** with turbo mode
 
-**🎉 That's it!** Visit [http://localhost:3000](http://localhost:3000)
+**🎉 That's it!** Visit [http://localhost:3002](http://localhost:3002)
 
 **Default Admin Credentials:** `admin` / `admin123`
 
@@ -136,12 +149,15 @@ docker-compose logs -f portfolio-app
    DEFAULT_ADMIN_EMAIL=admin@portfolio.com
    
    # 🔴 REQUIRED: Next.js App Configuration
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   NEXT_PUBLIC_API_URL=http://localhost:3000/api
+   NEXT_PUBLIC_APP_URL=http://localhost:3002
+   NEXT_PUBLIC_API_URL=http://localhost:3002/api
    
    # 🟡 OPTIONAL: GitHub Integration (pre-configured)
    GITHUB_USERNAME=tumrabert
    GITHUB_TOKEN=your-github-token-here
+   
+   # 🟡 OPTIONAL: Website Thumbnail Generation
+   THUMBNAIL_API=your-thumbnail-ws-api-key-here
    ```
    
    > **💡 Tip:** The `.env.example` file includes detailed documentation with 🔴 REQUIRED and 🟡 OPTIONAL variables clearly marked.
@@ -168,7 +184,7 @@ docker-compose logs -f portfolio-app
    mongoimport --db portfolio --collection portfolios --file sample-data.json
    ```
 
-**🌟 Visit [http://localhost:3000](http://localhost:3000) to see your portfolio!**
+**🌟 Visit [http://localhost:3002](http://localhost:3002) to see your portfolio!**
 
 > **📝 Note:** If you're following this guide and the server starts on a different port (like 3002), use that URL instead. The application will show the correct URL in the terminal.
 
@@ -195,7 +211,7 @@ This starts:
 - **Next.js app** with health checks
 - **Nginx** reverse proxy with SSL support
 - **Redis** for caching (production)
-- **Default admin credentials**: admin / admin123
+- **Default admin credentials**: `admin` / `admin123`
 
 ### Manual Docker Build
 
@@ -230,12 +246,12 @@ After successful login, you'll see:
 
 | Section | What You Can Edit |
 |---------|-------------------|
-| **🏠 Hero** | Name, title, description, quick facts, avatar URL |
+| **🏠 Hero** | Name, title, description, quick facts, avatar with real-time positioning |
 | **👤 About** | Professional summary, contact info, interests |
 | **💼 Experience** | Add/edit/remove jobs, technologies, achievements |
 | **🎓 Education** | Academic background, degrees, honors |
 | **⚡ Skills** | Technologies with categories and proficiency (1-5) |
-| **📁 Projects** | Add/edit projects, set featured status, links |
+| **📁 Projects** | Add/edit projects, website screenshot generation, set featured status, links |
 
 #### **Step 4: Real-time Editing**
 - Click any **"Edit"** button (blue pencil icon) on sections
@@ -291,6 +307,7 @@ portfolio-nextjs/
 | `GET` | `/api/auth/default-credentials` | Get default login credentials | ❌ |
 | `GET` | `/api/portfolio` | Fetch complete portfolio data | ❌ |
 | `PUT` | `/api/portfolio` | Update portfolio content | ✅ |
+| `POST` | `/api/fetch-website-image` | Generate website screenshot thumbnails | ❌ |
 
 ### 🔑 **Authentication Flow**
 1. **Login**: POST to `/api/auth/login` with credentials
@@ -322,6 +339,12 @@ interface Portfolio {
     email: string;          // Contact email
     phone: string;          // Phone number
     location: string;       // Geographic location
+    avatar?: string;        // Avatar image URL
+    avatarPositioning?: {   // Avatar positioning data
+      x: number;            // Horizontal position (0-100)
+      y: number;            // Vertical position (0-100)
+      scale: number;        // Zoom scale (0.8-2.5)
+    };
     github?: string;        // GitHub username
     linkedin?: string;      // LinkedIn profile
     website?: string;       // Personal website
@@ -352,8 +375,11 @@ interface Portfolio {
     description: string;    // Project description
     github?: string;        // GitHub repository
     demo?: string;          // Live demo URL
+    image?: string;         // Project image/screenshot URL
     technologies: string[]; // Tech stack used
     featured: boolean;      // Show on main page
+    order: number;          // Display order
+    hide: boolean;          // Hide from display
   }];
 }
 ```
@@ -660,11 +686,11 @@ print('Admin user created');
 **Cause:** Another application using the port  
 **Solution:** 
 ```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
+# Kill process on port 3002
+lsof -ti:3002 | xargs kill -9
 
 # Or use different port
-PORT=3002 npm run dev
+PORT=3000 npm run dev
 ```
 
 #### ❌ "Network error occurred when login"

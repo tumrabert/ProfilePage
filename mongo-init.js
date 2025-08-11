@@ -10,7 +10,7 @@ print('Creating default admin user...');
 db.users.insertOne({
   username: 'admin',
   email: 'admin@portfolio.com',
-  password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdGhG/S7.aDlW.q', // admin123
+  password: '$2b$12$pef.ujF2cf9sN7skcIXD3.9HiBV0HLXf3N22Nr2/rWk2rCq0Oq8TG', // admin123
   role: 'admin',
   isActive: true,
   createdAt: new Date(),
@@ -26,6 +26,11 @@ db.portfolios.insertOne({
     email: 'your.email@example.com',
     phone: '+1 (555) 123-4567',
     location: 'Your City, Country',
+    github: 'yourusername',
+    linkedin: 'yourusername',
+    instagram: 'yourusername',
+    twitter: 'yourusername',
+    website: 'yourwebsite.com',
     avatar: '',
     title: 'Full Stack Developer',
     description: 'Passionate developer with experience in modern web technologies. I love creating efficient, scalable, and user-friendly applications.',
@@ -67,33 +72,36 @@ db.portfolios.insertOne({
   ],
   educations: [
     {
-      institution: 'University of Technology',
-      degree: "Bachelor's",
-      field: 'Computer Science',
-      duration: '2016 - 2020',
-      description: 'Focused on software development, algorithms, and system design. Active in coding competitions and tech clubs.',
-      achievements: [
+      university: 'University of Technology',
+      degree: "Bachelor's in Computer Science",
+      start_year: '2016',
+      end_year: '2020',
+      GPAX: '3.75',
+      details: [
+        'Focused on software development, algorithms, and system design',
+        'Active in coding competitions and tech clubs',
         'Graduated Magna Cum Laude',
         'Dean\'s List for 3 semesters',
         'Led university coding club'
-      ]
+      ],
+      order: 0
     }
   ],
   technologies: [
-    { name: 'JavaScript', category: 'Frontend', level: 5 },
-    { name: 'TypeScript', category: 'Frontend', level: 4 },
-    { name: 'React', category: 'Frontend', level: 5 },
-    { name: 'Next.js', category: 'Frontend', level: 4 },
-    { name: 'Vue.js', category: 'Frontend', level: 3 },
-    { name: 'Node.js', category: 'Backend', level: 4 },
-    { name: 'Express.js', category: 'Backend', level: 4 },
-    { name: 'Python', category: 'Backend', level: 3 },
-    { name: 'MongoDB', category: 'Database', level: 4 },
-    { name: 'PostgreSQL', category: 'Database', level: 3 },
-    { name: 'Docker', category: 'DevOps', level: 3 },
-    { name: 'AWS', category: 'DevOps', level: 3 },
-    { name: 'Git', category: 'Tools', level: 5 },
-    { name: 'VS Code', category: 'Tools', level: 5 }
+    { name: 'JavaScript', category: 'Frontend', level: 5, order: 0 },
+    { name: 'TypeScript', category: 'Frontend', level: 4, order: 1 },
+    { name: 'React', category: 'Frontend', level: 5, order: 2 },
+    { name: 'Next.js', category: 'Frontend', level: 4, order: 3 },
+    { name: 'Vue.js', category: 'Frontend', level: 3, order: 4 },
+    { name: 'Node.js', category: 'Backend', level: 4, order: 5 },
+    { name: 'Express.js', category: 'Backend', level: 4, order: 6 },
+    { name: 'Python', category: 'Backend', level: 3, order: 7 },
+    { name: 'MongoDB', category: 'Database', level: 4, order: 8 },
+    { name: 'PostgreSQL', category: 'Database', level: 3, order: 9 },
+    { name: 'Docker', category: 'DevOps', level: 3, order: 10 },
+    { name: 'AWS', category: 'DevOps', level: 3, order: 11 },
+    { name: 'Git', category: 'Tools', level: 5, order: 12 },
+    { name: 'VS Code', category: 'Tools', level: 5, order: 13 }
   ],
   projects: [
     {
@@ -101,30 +109,33 @@ db.portfolios.insertOne({
       description: 'Full-stack e-commerce solution with React frontend, Node.js backend, and MongoDB database. Features include user authentication, product catalog, shopping cart, and payment integration.',
       technologies: ['React', 'Node.js', 'MongoDB', 'Stripe', 'JWT'],
       image: 'https://via.placeholder.com/400x300?text=E-commerce+Platform',
-      liveUrl: 'https://demo-ecommerce.example.com',
-      githubUrl: 'https://github.com/username/ecommerce-platform',
+      images: ['https://via.placeholder.com/400x300?text=E-commerce+Dashboard', 'https://via.placeholder.com/400x300?text=E-commerce+Mobile'],
+      demo: 'https://demo-ecommerce.example.com',
+      github: 'https://github.com/username/ecommerce-platform',
       featured: true,
-      completionDate: '2023-12-01'
+      order: 0
     },
     {
       name: 'Task Management App',
       description: 'Collaborative task management application with real-time updates, team collaboration features, and advanced filtering options.',
       technologies: ['Vue.js', 'Express.js', 'Socket.io', 'PostgreSQL'],
       image: 'https://via.placeholder.com/400x300?text=Task+Management',
-      liveUrl: 'https://demo-tasks.example.com',
-      githubUrl: 'https://github.com/username/task-manager',
+      images: ['https://via.placeholder.com/400x300?text=Task+Board', 'https://via.placeholder.com/400x300?text=Task+Analytics'],
+      demo: 'https://demo-tasks.example.com',
+      github: 'https://github.com/username/task-manager',
       featured: true,
-      completionDate: '2023-10-15'
+      order: 1
     },
     {
       name: 'Weather Dashboard',
       description: 'Real-time weather dashboard with location-based forecasts, interactive maps, and weather alerts.',
       technologies: ['React', 'Weather API', 'Chart.js', 'Tailwind CSS'],
       image: 'https://via.placeholder.com/400x300?text=Weather+Dashboard',
-      liveUrl: 'https://demo-weather.example.com',
-      githubUrl: 'https://github.com/username/weather-dashboard',
+      images: ['https://via.placeholder.com/400x300?text=Weather+Map', 'https://via.placeholder.com/400x300?text=Weather+Charts'],
+      demo: 'https://demo-weather.example.com',
+      github: 'https://github.com/username/weather-dashboard',
       featured: false,
-      completionDate: '2023-08-20'
+      order: 2
     }
   ],
   displayProjects: [], // Will be populated by featured projects

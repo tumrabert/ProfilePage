@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { usePortfolio } from '@/hooks/usePortfolio';
 import { useState } from 'react';
+import SettingsSidebar from './SettingsSidebar';
 
 interface User {
   id: string;
@@ -17,7 +19,9 @@ interface AdminControlsProps {
 
 export default function AdminControls({ onLogout, user }: AdminControlsProps) {
   const { logout } = useAuth();
+  const { data: portfolio } = usePortfolio();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -143,6 +147,21 @@ export default function AdminControls({ onLogout, user }: AdminControlsProps) {
                   </span>
                 </button>
 
+                {/* Settings Panel */}
+                <button
+                  onClick={() => {
+                    setIsSettingsOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-left group"
+                >
+                  <i className="fas fa-cog w-5 text-center text-purple-400 group-hover:text-purple-300"></i>
+                  <span className="ml-3 text-gray-300 group-hover:text-white text-sm">
+                    Contact Settings
+                  </span>
+                  <i className="fas fa-chevron-right ml-auto text-gray-500 group-hover:text-gray-400 text-xs"></i>
+                </button>
+
                 {/* GitHub Integration */}
                 <div className="p-3 bg-gray-700/50 rounded-lg border border-gray-600">
                   <div className="flex items-center text-gray-400 text-sm">
@@ -195,6 +214,13 @@ export default function AdminControls({ onLogout, user }: AdminControlsProps) {
           </div>
         </>
       )}
+
+      {/* Settings Sidebar */}
+      <SettingsSidebar
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        portfolioData={portfolio}
+      />
     </>
   );
 }

@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
     
     environment {
         // Production configuration
@@ -20,6 +20,7 @@ pipeline {
     
     stages {
         stage('Verify Credentials') {
+            agent any
             steps {
                 script {
                     echo '🔍 Verifying credential access...'
@@ -37,26 +38,24 @@ pipeline {
             }
         }
         
-        stage('Checkout') {
+        stage('Build Application') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 echo '🔄 Checking out code...'
                 checkout scm
-            }
-        }
-        
-        stage('Setup Environment') {
-            steps {
-                echo '🔧 Setting up Docker environment...'
+                
+                echo '🏗️ Building Next.js application...'
                 sh '''
-                    # Check if Docker is running
-                    if ! docker info >/dev/null 2>&1; then
-                        echo "❌ Docker is not running"
-                        exit 1
-                    fi
+                    # Install dependencies
+                    npm ci
                     
-                    echo "✅ Docker is running"
-                    docker --version
-                    docker-compose --version
+                    # Build the application
+                    NODE_ENV=development npm run build
                     
                     # Create production environment file
                     cat > .env.production << EOF
@@ -69,84 +68,61 @@ GITHUB_TOKEN=${GITHUB_TOKEN}
 THUMBNAIL_API=${THUMBNAIL_API}
 NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 EOF
-                    echo "✅ Environment file created"
                 '''
             }
         }
         
-        stage('Validate Configuration') {
-            steps {
-                echo '✅ Validating Docker and Jenkins setup...'
-                sh '''
-                    # Check if docker-compose.prod.yml exists
-                    if [ ! -f "${COMPOSE_FILE}" ]; then
-                        echo "❌ ${COMPOSE_FILE} not found!"
-                        exit 1
-                    fi
-                    
-                    # Validate docker-compose file syntax
-                    docker-compose -f ${COMPOSE_FILE} config >/dev/null 2>&1
-                    if [ $? -eq 0 ]; then
-                        echo "✅ Docker Compose file is valid"
-                    else
-                        echo "❌ Docker Compose file validation failed"
-                        exit 1
-                    fi
-                    
-                    # Check if Dockerfile exists
-                    if [ ! -f "Dockerfile" ]; then
-                        echo "❌ Dockerfile not found!"
-                        exit 1
-                    fi
-                    
-                    echo "✅ All configuration files validated"
-                '''
+        stage('Build and Deploy') {
+            agent {
+                docker {
+                    image 'docker/compose:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:$WORKSPACE'
+                }
             }
-        }
-        
-        stage('Build Docker Images') {
-            steps {
-                echo '🐳 Building Docker images...'
-                sh '''
-                    # Stop any existing containers
-                    docker-compose -f ${COMPOSE_FILE} down || true
-                    
-                    # Build images with verbose output
-                    docker-compose -f ${COMPOSE_FILE} build --no-cache
-                    
-                    # Verify images were created
-                    docker-compose -f ${COMPOSE_FILE} images
-                '''
-            }
-        }
-        
-        stage('Deploy') {
             when {
                 branch 'main'
             }
             steps {
-                echo '🚀 Deploying to production...'
+                echo '🔧 Setting up workspace...'
+                checkout scm
+                
+                echo '🐳 Building and deploying with Docker Compose...'
                 sh '''
-                    # Start production containers
-                    docker-compose -f ${COMPOSE_FILE} up -d
+                    # Create production environment file
+                    cat > .env.production << EOF
+NODE_ENV=production
+MONGODB_URI=${MONGODB_URI}
+JWT_SECRET=${JWT_SECRET}
+DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
+DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+GITHUB_TOKEN=${GITHUB_TOKEN}
+THUMBNAIL_API=${THUMBNAIL_API}
+NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+EOF
+                    
+                    # Stop any existing containers
+                    docker-compose -f ${COMPOSE_FILE} down || true
+                    
+                    # Build and start containers
+                    docker-compose -f ${COMPOSE_FILE} up -d --build
                     
                     # Wait for containers to start
-                    echo "⏳ Waiting for containers to start..."
                     sleep 15
+                    
+                    # Check container status
+                    docker-compose -f ${COMPOSE_FILE} ps
                 '''
             }
         }
         
         stage('Health Check') {
+            agent any
             when {
                 branch 'main'
             }
             steps {
                 echo '🏥 Running health check...'
                 sh '''
-                    # Check if containers are running
-                    docker-compose -f ${COMPOSE_FILE} ps
-                    
                     # Wait for application to be ready
                     for i in {1..10}; do
                         if curl -f http://localhost:3000/api/portfolio >/dev/null 2>&1; then
@@ -161,7 +137,6 @@ EOF
                     # Final health check
                     if ! curl -f http://localhost:3000 >/dev/null 2>&1; then
                         echo "❌ Health check failed"
-                        docker-compose -f ${COMPOSE_FILE} logs
                         exit 1
                     fi
                 '''
@@ -174,11 +149,14 @@ EOF
             echo '🎉 Pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed!'
-            sh '''
-                echo "📝 Container logs:"
-                docker-compose -f ${COMPOSE_FILE} logs --tail=50 || echo "No container logs available"
-            '''
+            agent any
+            steps {
+                echo '❌ Pipeline failed!'
+                sh '''
+                    echo "📝 Container logs:"
+                    docker-compose -f ${COMPOSE_FILE} logs --tail=50 || echo "No container logs available"
+                '''
+            }
         }
         always {
             cleanWs()

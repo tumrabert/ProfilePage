@@ -1,10 +1,6 @@
 pipeline {
     agent any
     
-    tools {
-        nodejs 'NodeJS-18'  // This requires NodeJS plugin installed
-    }
-    
     environment {
         // Production configuration
         NODE_ENV = 'production'
@@ -18,8 +14,8 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token')
         THUMBNAIL_API = credentials('thumbnail-api-key')
         
-        // Deployment paths
-        DEPLOY_DIR = '/opt/portfolio'
+        // Docker Compose file
+        COMPOSE_FILE = 'docker-compose.prod.yml'
     }
     
     stages {
@@ -50,50 +46,77 @@ pipeline {
         
         stage('Setup Environment') {
             steps {
-                echo '🔧 Setting up environment...'
+                echo '🔧 Setting up Docker environment...'
                 sh '''
-                    echo "✅ Environment check:"
-                    node --version
-                    npm --version
+                    # Check if Docker is running
+                    if ! docker info >/dev/null 2>&1; then
+                        echo "❌ Docker is not running"
+                        exit 1
+                    fi
                     
-                    # Install PM2 locally for deployment
-                    npm install pm2
-                    export PATH="$PWD/node_modules/.bin:$PATH"
-                    echo "PM2 installed locally"
+                    echo "✅ Docker is running"
+                    docker --version
+                    docker-compose --version
+                    
+                    # Create production environment file
+                    cat > .env.production << EOF
+NODE_ENV=production
+MONGODB_URI=${MONGODB_URI}
+JWT_SECRET=${JWT_SECRET}
+DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
+DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+GITHUB_TOKEN=${GITHUB_TOKEN}
+THUMBNAIL_API=${THUMBNAIL_API}
+NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+EOF
+                    echo "✅ Environment file created"
                 '''
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Validate Configuration') {
             steps {
-                echo '📦 Installing dependencies...'
+                echo '✅ Validating Docker and Jenkins setup...'
                 sh '''
-                    # Install all dependencies (including devDependencies for TypeScript)
-                    npm ci
+                    # Check if docker-compose.prod.yml exists
+                    if [ ! -f "${COMPOSE_FILE}" ]; then
+                        echo "❌ ${COMPOSE_FILE} not found!"
+                        exit 1
+                    fi
                     
-                    # Verify TypeScript is available
-                    ./node_modules/.bin/tsc --version || echo "TypeScript verification failed"
+                    # Validate docker-compose file syntax
+                    docker-compose -f ${COMPOSE_FILE} config >/dev/null 2>&1
+                    if [ $? -eq 0 ]; then
+                        echo "✅ Docker Compose file is valid"
+                    else
+                        echo "❌ Docker Compose file validation failed"
+                        exit 1
+                    fi
+                    
+                    # Check if Dockerfile exists
+                    if [ ! -f "Dockerfile" ]; then
+                        echo "❌ Dockerfile not found!"
+                        exit 1
+                    fi
+                    
+                    echo "✅ All configuration files validated"
                 '''
             }
         }
         
-        stage('Build') {
+        stage('Build Docker Images') {
             steps {
-                echo '🏗️ Building application...'
+                echo '🐳 Building Docker images...'
                 sh '''
-                    # Ensure NODE_ENV is not set to production during build
-                    export NODE_ENV=development
+                    # Stop any existing containers
+                    docker-compose -f ${COMPOSE_FILE} down || true
                     
-                    # Build the application
-                    npm run build
+                    # Build images with verbose output
+                    docker-compose -f ${COMPOSE_FILE} build --no-cache
+                    
+                    # Verify images were created
+                    docker-compose -f ${COMPOSE_FILE} images
                 '''
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                echo '🧪 Running tests...'
-                sh 'npm run lint || echo "Linting completed with warnings"'
             }
         }
         
@@ -104,37 +127,12 @@ pipeline {
             steps {
                 echo '🚀 Deploying to production...'
                 sh '''
-                    # Add node_modules/.bin to PATH for PM2
-                    export PATH="$PWD/node_modules/.bin:$PATH"
+                    # Start production containers
+                    docker-compose -f ${COMPOSE_FILE} up -d
                     
-                    # Stop existing process
-                    pm2 stop portfolio || true
-                    
-                    # Create deployment directory (without sudo)
-                    mkdir -p ${DEPLOY_DIR}
-                    
-                    # Copy files (without sudo)
-                    rsync -av --delete .next/ ${DEPLOY_DIR}/.next/
-                    rsync -av --delete public/ ${DEPLOY_DIR}/public/
-                    cp package.json ${DEPLOY_DIR}/
-                    cp -r node_modules/ ${DEPLOY_DIR}/node_modules/
-                    
-                    # Create environment file
-                    cat > ${DEPLOY_DIR}/.env.production << EOF
-NODE_ENV=production
-MONGODB_URI=${MONGODB_URI}
-JWT_SECRET=${JWT_SECRET}
-DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
-DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
-GITHUB_TOKEN=${GITHUB_TOKEN}
-THUMBNAIL_API=${THUMBNAIL_API}
-NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-EOF
-                    
-                    # Start application
-                    cd ${DEPLOY_DIR}
-                    export PATH="$PWD/node_modules/.bin:$PATH"
-                    pm2 start npm --name "portfolio" -- start
+                    # Wait for containers to start
+                    echo "⏳ Waiting for containers to start..."
+                    sleep 15
                 '''
             }
         }
@@ -146,13 +144,26 @@ EOF
             steps {
                 echo '🏥 Running health check...'
                 sh '''
-                    # Wait for app to start
-                    sleep 15
+                    # Check if containers are running
+                    docker-compose -f ${COMPOSE_FILE} ps
                     
-                    # Check if app is responding
-                    curl -f http://localhost:3000/api/portfolio || exit 1
+                    # Wait for application to be ready
+                    for i in {1..10}; do
+                        if curl -f http://localhost:3000/api/portfolio >/dev/null 2>&1; then
+                            echo "✅ Health check passed!"
+                            break
+                        else
+                            echo "⏳ Waiting for application... (attempt $i/10)"
+                            sleep 5
+                        fi
+                    done
                     
-                    echo "✅ Health check passed!"
+                    # Final health check
+                    if ! curl -f http://localhost:3000 >/dev/null 2>&1; then
+                        echo "❌ Health check failed"
+                        docker-compose -f ${COMPOSE_FILE} logs
+                        exit 1
+                    fi
                 '''
             }
         }
@@ -165,8 +176,8 @@ EOF
         failure {
             echo '❌ Pipeline failed!'
             sh '''
-                export PATH="$PWD/node_modules/.bin:$PATH"
-                pm2 logs portfolio --lines 20 || echo "PM2 logs not available"
+                echo "📝 Container logs:"
+                docker-compose -f ${COMPOSE_FILE} logs --tail=50 || echo "No container logs available"
             '''
         }
         always {

@@ -1,6 +1,13 @@
 pipeline {
     agent any
     
+    triggers {
+        // Poll GitHub for changes every 2 minutes
+        pollSCM('H/2 * * * *')
+        // Alternatively, use webhook trigger
+        githubPush()
+    }
+    
     environment {
         // Production configuration
         NODE_ENV = 'production'
@@ -24,7 +31,27 @@ pipeline {
     }
     
     stages {
+        stage('Check Branch') {
+            steps {
+                script {
+                    if (env.BRANCH_NAME && env.BRANCH_NAME != 'main') {
+                        echo "⏭️  Skipping deployment for branch: ${env.BRANCH_NAME}"
+                        echo "✅ Only 'main' branch triggers deployment"
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+                    echo "✅ Building main branch - proceeding with deployment"
+                }
+            }
+        }
+        
         stage('Verify Credentials') {
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 script {
                     echo '🔍 Verifying credential access...'
@@ -43,7 +70,12 @@ pipeline {
         }
         
         stage('Setup Docker Environment') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🐳 Setting up Docker environment...'
                 script {
@@ -102,7 +134,12 @@ pipeline {
         }
         
         stage('Prepare Deployment') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🔧 Preparing deployment files...'
                 sh '''
@@ -201,7 +238,12 @@ EOF
         }
         
         stage('Stop Previous Deployment') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🛑 Stopping previous deployment...'
                 script {
@@ -225,7 +267,12 @@ EOF
         }
         
         stage('Deploy Application') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🚀 Deploying application...'
                 script {
@@ -264,7 +311,12 @@ EOF
         }
         
         stage('Health Check') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🏥 Performing application health check...'
                 script {
@@ -330,7 +382,12 @@ EOF
         }
         
         stage('Initialize Admin User') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '👤 Initializing default admin user...'
                 script {
@@ -371,7 +428,12 @@ EOF
         }
         
         stage('Post-Deployment Tests') {
-            // Remove when condition to run on any branch for now
+            when {
+                anyOf {
+                    branch 'main'
+                    not { changeRequest() }
+                }
+            }
             steps {
                 echo '🧪 Running post-deployment tests...'
                 script {

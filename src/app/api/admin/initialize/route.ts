@@ -40,19 +40,20 @@ export async function POST() {
       role: 'admin'
     }, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Admin initialization error:', error);
     
     // Handle duplicate key errors
-    if (error.code === 11000) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
       return NextResponse.json(
         { error: 'Admin user already exists' },
         { status: 409 }
       );
     }
 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to initialize admin user', details: error.message },
+      { error: 'Failed to initialize admin user', details: errorMessage },
       { status: 500 }
     );
   }
@@ -72,7 +73,7 @@ export async function GET() {
       needsInitialization: adminCount === 0
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Admin status check error:', error);
     return NextResponse.json(
       { error: 'Failed to check admin status' },

@@ -149,13 +149,16 @@ EOF
             echo '🎉 Pipeline completed successfully!'
         }
         failure {
-            agent any
-            steps {
-                echo '❌ Pipeline failed!'
-                sh '''
-                    echo "📝 Container logs:"
-                    docker-compose -f ${COMPOSE_FILE} logs --tail=50 || echo "No container logs available"
-                '''
+            echo '❌ Pipeline failed!'
+            script {
+                try {
+                    sh '''
+                        echo "📝 Container logs:"
+                        docker-compose -f docker-compose.prod.yml logs --tail=50 || echo "No container logs available"
+                    '''
+                } catch (Exception e) {
+                    echo "Could not retrieve container logs: ${e.getMessage()}"
+                }
             }
         }
         always {

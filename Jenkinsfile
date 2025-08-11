@@ -47,6 +47,16 @@ pipeline {
             steps {
                 echo '🐳 Setting up Docker environment...'
                 script {
+                    // Configure Docker for Jenkins
+                    sh '''
+                        # Set Docker host if not already set
+                        export DOCKER_HOST=unix:///var/run/docker.sock
+                        echo "DOCKER_HOST: $DOCKER_HOST"
+                        
+                        # Test Docker connection
+                        docker version || echo "Docker connection test failed"
+                    '''
+                    
                     // Check if Docker is installed
                     def dockerInstalled = sh(script: 'command -v docker >/dev/null 2>&1', returnStatus: true) == 0
                     def dockerComposeInstalled = sh(script: 'command -v docker-compose >/dev/null 2>&1', returnStatus: true) == 0
@@ -115,21 +125,73 @@ pipeline {
                     echo "NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL"
                     echo "PORT: $PORT"
                     
-                    # Check if docker-compose file exists
+                    # Create production docker-compose file
                     if [ -f "${COMPOSE_FILE}" ]; then
-                        echo "✅ Using existing ${COMPOSE_FILE}"
+                        echo "✅ Found ${COMPOSE_FILE}, creating production version..."
                         
-                        # Update docker-compose to remove version, env_file, and MongoDB service
-                        sed -i '/^version:/d' ${COMPOSE_FILE}
-                        sed -i '/env_file:/d' ${COMPOSE_FILE}
-                        sed -i '/- .env/d' ${COMPOSE_FILE}
+                        # Create production docker-compose without MongoDB
+                        cat > docker-compose.prod.jenkins.yml << 'EOF'
+services:
+  # Next.js Application
+  portfolio-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: portfolio-nextjs-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - THUMBNAIL_API=${THUMBNAIL_API}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - PORT=${PORT}
+    ports:
+      - "3000:3000"
+    networks:
+      - portfolio-network
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: portfolio-redis-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - portfolio-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  portfolio-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+EOF
                         
-                        # Remove MongoDB service and dependencies since using external DB
-                        sed -i '/# MongoDB Database/,/condition: service_healthy/d' ${COMPOSE_FILE}
-                        sed -i '/mongodb:/d' ${COMPOSE_FILE}
-                        sed -i '/depends_on:/,/condition: service_healthy/d' ${COMPOSE_FILE}
-                        
-                        echo "✅ Updated docker-compose.yml for production (removed MongoDB service)"
+                        echo "✅ Created production docker-compose.prod.jenkins.yml"
+                        export COMPOSE_FILE="docker-compose.prod.jenkins.yml"
                     else
                         echo "❌ Docker Compose file ${COMPOSE_FILE} not found!"
                         exit 1
@@ -145,8 +207,11 @@ pipeline {
                 script {
                     try {
                         sh '''
+                            # Set Docker environment
+                            export DOCKER_HOST=unix:///var/run/docker.sock
+                            
                             # Stop and remove previous containers
-                            docker-compose -f ${COMPOSE_FILE} down --remove-orphans --volumes || true
+                            docker-compose -f docker-compose.prod.jenkins.yml down --remove-orphans --volumes || true
                             
                             # Clean up unused images (keep last 2 versions)
                             docker image prune -f || true
@@ -169,6 +234,9 @@ pipeline {
                     env.REDIS_PASSWORD = 'redis123'
                 }
                 sh '''
+                    # Set Docker environment
+                    export DOCKER_HOST=unix:///var/run/docker.sock
+                    
                     # Export all environment variables for docker-compose
                     export NODE_ENV=production
                     export MONGODB_URI="${MONGODB_URI}"
@@ -182,15 +250,15 @@ pipeline {
                     export REDIS_PASSWORD="redis123"
                     
                     # Build and start the application
-                    docker-compose -f ${COMPOSE_FILE} up -d --build
+                    docker-compose -f docker-compose.prod.jenkins.yml up -d --build
                     
                     # Show running containers
                     echo "📊 Running containers:"
-                    docker-compose -f ${COMPOSE_FILE} ps
+                    docker-compose -f docker-compose.prod.jenkins.yml ps
                     
                     # Show initial logs
                     echo "📝 Initial container logs:"
-                    docker-compose -f ${COMPOSE_FILE} logs --tail=20
+                    docker-compose -f docker-compose.prod.jenkins.yml logs --tail=20
                 '''
             }
         }
@@ -215,9 +283,9 @@ pipeline {
                                     echo "Health check attempt #$counter"
                                     
                                     # Check if container is running
-                                    if ! docker-compose -f ${COMPOSE_FILE} ps | grep "Up" > /dev/null; then
+                                    if ! docker-compose -f docker-compose.prod.jenkins.yml ps | grep "Up" > /dev/null; then
                                         echo "❌ Container is not running!"
-                                        docker-compose -f ${COMPOSE_FILE} logs --tail=50
+                                        docker-compose -f docker-compose.prod.jenkins.yml logs --tail=50
                                         exit 1
                                     fi
                                     
@@ -239,7 +307,7 @@ pipeline {
                             
                             # Display final status
                             echo "📊 Final deployment status:"
-                            docker-compose -f ${COMPOSE_FILE} ps
+                            docker-compose -f docker-compose.prod.jenkins.yml ps
                         '''
                     } catch (Exception e) {
                         echo "❌ Health check failed: ${e.getMessage()}"
@@ -250,9 +318,9 @@ pipeline {
                             
                             echo "🔍 Debugging information:"
                             echo "Container status:"
-                            docker-compose -f ${COMPOSE_FILE} ps
+                            docker-compose -f docker-compose.prod.jenkins.yml ps
                             echo "Recent logs:"
-                            docker-compose -f ${COMPOSE_FILE} logs --tail=100
+                            docker-compose -f docker-compose.prod.jenkins.yml logs --tail=100
                         '''
                         
                         throw e
@@ -301,7 +369,7 @@ pipeline {
                         echo "====================="
                         echo "🌐 Application URL: ${NEXT_PUBLIC_APP_URL}"
                         echo "📊 Container Status:"
-                        docker-compose -f ${COMPOSE_FILE} ps || echo "No containers found"
+                        docker-compose -f docker-compose.prod.jenkins.yml ps || echo "No containers found"
                     '''
                 } catch (Exception e) {
                     echo "Could not retrieve deployment summary: ${e.getMessage()}"
@@ -318,10 +386,10 @@ pipeline {
                         echo "================================="
                         
                         echo "📊 Container status:"
-                        docker-compose -f ${COMPOSE_FILE} ps || echo "No containers found"
+                        docker-compose -f docker-compose.prod.jenkins.yml ps || echo "No containers found"
                         
                         echo "📝 Container logs:"
-                        docker-compose -f ${COMPOSE_FILE} logs --tail=50 || echo "No container logs available"
+                        docker-compose -f docker-compose.prod.jenkins.yml logs --tail=50 || echo "No container logs available"
                         
                         echo "💾 System resources:"
                         df -h || true

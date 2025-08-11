@@ -122,7 +122,7 @@ pipeline {
                         # Update docker-compose to remove version, env_file, and MongoDB service
                         sed -i '/^version:/d' ${COMPOSE_FILE}
                         sed -i '/env_file:/d' ${COMPOSE_FILE}
-                        sed -i '/- \.env/d' ${COMPOSE_FILE}
+                        sed -i '/- .env/d' ${COMPOSE_FILE}
                         
                         # Remove MongoDB service and dependencies since using external DB
                         sed -i '/# MongoDB Database/,/condition: service_healthy/d' ${COMPOSE_FILE}

@@ -65,6 +65,59 @@ A modern, professional portfolio website built with **Next.js 15**, **TypeScript
 - **🔧 Clean UI Design**: Removed fallback `</>` logos from navbar, skills, and footer for cleaner appearance
 - **🔗 Smart URL Processing**: Automatic protocol handling for GitHub links and external URLs to prevent localhost redirects
 - **⚡ Real-time Preview**: Instant visual feedback for avatar positioning without requiring save operations
+- **🗜️ Smart Image Compression**: Automatic client-side image compression for faster uploads and reduced server payload
+- **📝 Text Formatting**: Proper newline preservation in textareas with formatted display output
+- **🏷️ Technology Logos**: Dynamic technology logos in Skills section with comprehensive icon library support
+
+## 🔧 **Recent Improvements & Fixes**
+
+### **🎯 Latest Updates (Current Sprint)**
+- ✅ **Textarea Newline Preservation**: Fixed issue where line breaks in textareas weren't preserved in display
+- ✅ **Image Upload Compression**: Added automatic client-side image compression to prevent 413 payload errors  
+- ✅ **Technology Logos**: Enhanced Skills section with technology logos alongside text
+- ✅ **Settings Cleanup**: Removed redundant 'Personal Info' section from contact settings
+- ✅ **Jenkins Auto-Build**: Configured automatic deployment triggers on git push to main branch
+- ✅ **Production Image Fix**: Resolved 413 Content Too Large errors with smart compression
+- ✅ **Enhanced Documentation**: Updated README with comprehensive auto-deployment guide
+
+### **🛠️ Recent Technical Fixes**
+- **Smart Image Compression**: 
+  - Automatic resize to max 1200px dimensions while maintaining aspect ratio
+  - Progressive JPEG quality optimization targeting ~500KB final size
+  - Client-side processing to reduce server payload load
+  - Enhanced error handling and user feedback
+  
+- **Text Formatting System**:
+  - Created `formatTextWithLineBreaks` utility for consistent newline handling
+  - Applied across About, Hero, Projects, and Experience components
+  - Proper JSX rendering with React.createElement for TypeScript compatibility
+  
+- **CI/CD Pipeline Enhancements**:
+  - GitHub webhook integration for instant build triggers
+  - Polling fallback system (every minute) for reliability
+  - Branch protection ensuring only main branch deploys to production
+  - Enhanced Jenkinsfile with comprehensive error handling and logging
+  
+- **Avatar Upload System**:
+  - Better error logging and debugging capabilities
+  - Real-time compression feedback and progress indicators
+  - Improved file size validation and user messaging
+
+### **📱 User Experience Improvements**
+- **Visual Enhancement**: Technology logos make Skills section more engaging and professional
+- **Clean Interface**: Removed redundant UI elements for streamlined user flow
+- **Better Error Messages**: More helpful and specific feedback for upload and form errors
+- **Automatic Optimization**: Images compressed automatically without user intervention
+- **Responsive Design**: All new features work seamlessly across mobile, tablet, and desktop
+- **Fast Loading**: Compressed images improve page load times and user experience
+- **Professional Polish**: Technology logos add visual appeal and credibility to skills showcase
+
+### **🔧 Developer Experience**
+- **Enhanced Documentation**: Comprehensive setup guides and troubleshooting sections
+- **Improved Debugging**: Better error logging throughout image upload pipeline
+- **TypeScript Safety**: Proper type definitions for all new utilities and components
+- **Automated Testing**: Jenkins pipeline includes automated testing and validation
+- **Easy Deployment**: One-command push to deploy with full automation
 
 ### 🚀 **Performance & Deployment**
 - **MongoDB integration** with Mongoose ODM
